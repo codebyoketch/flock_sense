@@ -1,0 +1,52 @@
+import { useState } from "react";
+import { View, Text, StyleSheet, Pressable, Switch } from "react-native";
+import { useAuth } from "@/context/AuthContext";
+
+export default function Profile() {
+  const { farmer, logout } = useAuth();
+  const [swahili, setSwahili] = useState(farmer?.language === "sw");
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.section}>
+        <Text style={styles.name}>{farmer?.name}</Text>
+        <Text style={styles.meta}>{farmer?.phone}</Text>
+        <Text style={styles.meta}>{farmer?.cooperativeName}</Text>
+        {farmer?.location?.label && <Text style={styles.meta}>{farmer.location.label}</Text>}
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.rowLabel}>Swahili</Text>
+        <Switch value={swahili} onValueChange={setSwahili} />
+      </View>
+
+      <Pressable style={styles.row}>
+        <Text style={styles.rowLabel}>Verification history</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
+
+      <Pressable style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.logoutText}>Log out</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20 },
+  section: { marginBottom: 24 },
+  name: { fontSize: 22, fontWeight: "700" },
+  meta: { fontSize: 14, color: "#666", marginTop: 4 },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  rowLabel: { fontSize: 15 },
+  chevron: { fontSize: 18, color: "#999" },
+  logoutButton: { marginTop: 32, padding: 14, alignItems: "center" },
+  logoutText: { color: "#c62828", fontWeight: "600", fontSize: 15 },
+});

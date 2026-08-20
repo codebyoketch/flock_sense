@@ -126,7 +126,7 @@ Livestock cooperatives get aggregated, verifiable data across their membership â
 | Layer | Choice | Why |
 |---|---|---|
 | Frontend | Mobile-first web app (PWA) or React Native/Expo | Farmers need quick, low-friction data entry |
-| Backend | Node.js/Express or Python/FastAPI | Fast to stand up, easy to integrate with a rules engine |
+| Backend | Go | Fast to stand up, easy to integrate with a rules engine |
 | Emissions logic | Rule-based calculator using published, species-specific emission factors (feed, energy, waste) | Explainable and defensible to judges; achievable in 48 hours |
 | Verification | Multi-verifier attestation flow with reciprocity gating | Solves the data-trust problem without requiring paperwork |
 | Recommendation engine | Decision-tree logic mapped to score thresholds â€” triggers targeted tips when a category's CO2e is high, confirmation tips when it's already low | Fast to build, qualifies as AI & Data Intelligence bonus |

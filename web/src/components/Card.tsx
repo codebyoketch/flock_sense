@@ -1,6 +1,6 @@
 // src/components/Card.tsx
 import React from 'react';
-import { royalFlockTheme } from '../theme';
+import { royalFlockTheme } from '../theme/index';
 
 interface CardProps {
   children: React.ReactNode;
@@ -19,24 +19,27 @@ export default function Card({
   hoverable = false,
   padding = 'lg',
 }: CardProps) {
-  const { colors, borderRadius, spacing, shadows } = royalFlockTheme;
+  const { colors, spacing } = royalFlockTheme;
   const [isHovered, setIsHovered] = React.useState(false);
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing[padding],
-    boxShadow: shadows.card.boxShadow,
+    borderRadius: 16,
+    padding: spacing[padding] || spacing.lg,
+    border: `1px solid ${colors.cream}`,
     transition: 'all 0.3s ease',
     cursor: onClick ? 'pointer' : 'default',
     transform: isHovered && hoverable ? 'translateY(-4px)' : 'none',
-    boxShadow: isHovered && hoverable ? shadows.elevated?.boxShadow || shadows.card.boxShadow : shadows.card.boxShadow,
+    // Use a single boxShadow property
+    boxShadow: isHovered && hoverable 
+      ? '0 8px 32px rgba(0,0,0,0.10)' 
+      : '0 2px 12px rgba(0,0,0,0.06)',
     ...style,
   };
 
   return (
     <div
-      className={`fade-in ${className}`}
+      className={className}
       style={cardStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

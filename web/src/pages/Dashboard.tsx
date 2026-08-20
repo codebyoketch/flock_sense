@@ -1,7 +1,6 @@
-// src/pages/Dashboard.tsx
+// src/pages/Dashboard.tsx - WITHOUT useNavigate
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { royalFlockTheme } from '../theme';
+import { royalFlockTheme } from '../theme/index';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
@@ -27,14 +26,15 @@ interface DashboardData {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const { colors, spacing, typography } = royalFlockTheme;
 
   useEffect(() => {
+    console.log('Dashboard useEffect running');
     // Simulate API call
     setTimeout(() => {
+      console.log('Setting data...');
       setData({
         farmerName: 'Mary Wanjiku',
         score: {
@@ -72,6 +72,8 @@ export default function Dashboard() {
       setLoading(false);
     }, 1500);
   }, []);
+
+  console.log('Dashboard rendering, loading:', loading, 'data:', data);
 
   const gradeColors = {
     A: colors.sage,
@@ -183,7 +185,7 @@ export default function Dashboard() {
             Here's your farm's sustainability overview
           </p>
         </div>
-        <Button size="small" variant="outline" onClick={() => navigate('/login')}>
+        <Button size="small" variant="outline">
           Logout
         </Button>
       </div>

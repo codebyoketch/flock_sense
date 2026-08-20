@@ -1,75 +1,57 @@
 // src/theme/index.ts
 export const royalFlockTheme = {
   colors: {
-    // Core Brand Colors
-    burgundy: "#800020",
-    sunsetOrange: "#FF8C42",
-    cream: "#FDF6EC",
-    sage: "#9CAF88",
-    
-    // Semantic Colors
-    primary: "#800020",
-    secondary: "#FF8C42",
-    background: "#FDF6EC",
-    surface: "#FFFFFF",
-    accent: "#9CAF88",
-    
-    // Text Colors
-    textPrimary: "#2D1B1B",
-    textSecondary: "#6B5B5B",
-    textOnDark: "#FDF6EC",
-    
-    // Status Colors
-    success: "#9CAF88",
-    warning: "#FF8C42",
-    error: "#B00020",
-    info: "#004D4D",
+    primary: '#2D6A4F',
+    secondary: '#52B788',
+    sage: '#95D5B2',
+    cream: '#F8F9FA',
+    background: '#FAFAF5',
+    surface: '#FFFFFF',
+    textPrimary: '#1A1A1A',
+    textSecondary: '#6B7280',
+    error: '#DC2626',
+    info: '#3B82F6',
+    textOnDark: '#FFFFFF',
   },
-
   spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    xxl: '48px',
   },
-
-  borderRadius: {
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    pill: 999,
-  },
-
   typography: {
     fontFamily: {
-      heading: "'Poppins', sans-serif",
-      body: "'Inter', sans-serif",
+      heading: 'Georgia, serif',
+      body: 'Arial, sans-serif',
     },
     sizes: {
-      h1: 28,
-      h2: 22,
-      h3: 18,
-      body: 16,
-      small: 14,
+      h1: '32px',
+      h2: '24px',
+      h3: '20px',
+      body: '16px',
+      small: '14px',
     },
     weights: {
-      regular: 400,
       medium: 500,
       bold: 700,
     },
   },
-
+  borderRadius: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+  },
   shadows: {
     card: {
-      boxShadow: "0 4px 12px rgba(128, 0, 32, 0.08)",
+      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    },
+    elevated: {
+      boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
     },
     cta: {
-      boxShadow: "0 6px 16px rgba(255, 140, 66, 0.2)",
+      boxShadow: '0 4px 20px rgba(82, 183, 136, 0.3)',
     },
   },
 };
-
-export default royalFlockTheme;

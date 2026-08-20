@@ -1,6 +1,6 @@
 // src/components/Button.tsx
 import React, { useState } from 'react';
-import { royalFlockTheme } from '../theme';
+import { royalFlockTheme } from '../theme/index';
 
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
@@ -23,27 +23,26 @@ export default function Button({
   type = 'button',
   disabled = false,
 }: ButtonProps) {
-  const { colors, borderRadius, spacing, shadows } = royalFlockTheme;
+  const { colors, spacing } = royalFlockTheme;
   const [isHovered, setIsHovered] = useState(false);
 
   // Size styles
   const sizeStyles = {
-    small: { padding: `${spacing.sm}px ${spacing.md}px`, fontSize: 14 },
-    medium: { padding: `${spacing.md}px ${spacing.lg}px`, fontSize: 16 },
-    large: { padding: `${spacing.md}px ${spacing.xl}px`, fontSize: 18 },
+    small: { padding: `${spacing.sm} ${spacing.md}`, fontSize: 14 },
+    medium: { padding: `${spacing.md} ${spacing.lg}`, fontSize: 16 },
+    large: { padding: `${spacing.md} ${spacing.xl}`, fontSize: 18 },
   };
 
   // Variant styles
   const variantStyles = {
     primary: {
       backgroundColor: colors.secondary,
-      color: colors.textOnDark,
+      color: '#FFFFFF',
       border: 'none',
-      boxShadow: shadows.cta.boxShadow,
     },
     secondary: {
       backgroundColor: colors.primary,
-      color: colors.textOnDark,
+      color: '#FFFFFF',
       border: 'none',
     },
     outline: {
@@ -58,7 +57,7 @@ export default function Button({
   const buttonStyle: React.CSSProperties = {
     ...sizeStyles[size],
     ...variantStyles[variant],
-    borderRadius: borderRadius.md,
+    borderRadius: 8,
     fontWeight: 600,
     cursor: isDisabled ? 'not-allowed' : 'pointer',
     width: fullWidth ? '100%' : 'auto',
@@ -69,9 +68,7 @@ export default function Button({
     opacity: isDisabled ? 0.6 : 1,
     transition: 'all 0.2s ease',
     transform: isHovered && !isDisabled ? 'translateY(-2px)' : 'none',
-    boxShadow: isHovered && !isDisabled && variant === 'primary' 
-      ? '0 8px 24px rgba(255, 140, 66, 0.3)' 
-      : variantStyles[variant].boxShadow || 'none',
+    // Remove the duplicate boxShadow - only keep this one
   };
 
   return (

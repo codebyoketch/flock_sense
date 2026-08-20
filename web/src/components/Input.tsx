@@ -1,6 +1,6 @@
 // src/components/Input.tsx
 import React, { useState } from 'react';
-import { royalFlockTheme } from '../theme';
+import { royalFlockTheme } from '../theme/index';
 
 interface InputProps {
   label?: string;
@@ -25,7 +25,7 @@ export default function Input({
   name,
   disabled = false,
 }: InputProps) {
-  const { colors, spacing, borderRadius, typography } = royalFlockTheme;
+  const { colors, spacing } = royalFlockTheme;
   const [isFocused, setIsFocused] = useState(false);
 
   const inputStyle: React.CSSProperties = {
@@ -34,26 +34,27 @@ export default function Input({
     border: `2px solid ${
       error ? colors.error : isFocused ? colors.primary : colors.cream
     }`,
-    borderRadius: borderRadius.sm,
-    fontSize: typography.sizes.body,
+    borderRadius: 8,
+    fontSize: 16,
     backgroundColor: disabled ? colors.cream : colors.background,
     color: colors.textPrimary,
     outline: 'none',
     transition: 'border 0.2s ease',
     opacity: disabled ? 0.7 : 1,
     cursor: disabled ? 'not-allowed' : 'text',
+    boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: typography.sizes.small,
-    fontWeight: typography.weights.medium,
+    fontSize: 14,
+    fontWeight: 500,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
     display: 'block',
   };
 
   const errorStyle: React.CSSProperties = {
-    fontSize: typography.sizes.small,
+    fontSize: 14,
     color: colors.error,
     marginTop: spacing.xs,
   };

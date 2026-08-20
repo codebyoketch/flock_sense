@@ -58,6 +58,40 @@ Each scoring period, the computed score plus a hash of the underlying data is wr
 
 SACCOs, banks, and green-financing programs currently have green capital earmarked for MSMEs but no mechanism to verify environmental practice at the informal-sector level. Jirani Score is a supporting risk signal — not a replacement for KYC or existing group-guarantee mechanisms — that closes this specific data gap.
 
+## Rubric Alignment
+
+| Criterion | Weight | How Jirani Score addresses it |
+|---|---|---|
+| Problem Relevance & Impact | 20% | Targets the 83% of Kenya's workforce in the informal sector, currently excluded from live, funded green-lending pipelines (KDC ~$42M mobilised, Stima SACCO Kes 100M) purely due to a data-verification gap, not a lack of demand or capital |
+| Technical Execution | 20% | Working end-to-end flow in 48 hrs: self-report → automated emission-factor calculation → multi-verifier attestation → on-chain score anchoring → shareable badge |
+| Innovation & Creativity | 15% | Reframes carbon accounting as a *trust* problem rather than a *math* problem — substitutes social/peer verification for documents the target segment doesn't have, instead of building yet another calculator |
+| Technology Integration | 15% | Mobile-first app (React Native/Expo), backend + emission-factor engine, blockchain anchoring — see Emerging Tech Bonus below for how this exceeds the minimum |
+| Scalability & Feasibility | 15% | Reuses existing social infrastructure (market clusters, chamas, tenant groups) as free distribution and verification — no new institution needs to be built; scales cluster by cluster |
+| Presentation & Demo | 10% | Live demo: real-time log → live peer verification → score + QR badge → on-chain proof scan (see Demo Script below) |
+| Team Collaboration | 5% | Clear role split across frontend, backend/scoring logic, blockchain, and pitch — see Team section |
+
+### Emerging Tech Bonus Category (required minimum: 1)
+
+**Primary: Blockchain for Sustainability.** Every scoring period's score and underlying data hash is anchored on-chain, giving lenders and buyers a tamper-evident record instead of a trust-based self-report — this is a functional use of blockchain (verification/trust), not a decorative one.
+
+**To push for the +2 "exceptional use" bonus**, go beyond simple hash-anchoring:
+- Store verifier attestations themselves on-chain (not just the final score), so the *chain of trust* — who verified what, and when — is independently auditable, not just the output number
+- Optionally explore a lightweight on-chain reputation trail for verifiers, so a lender or auditor could later see how reliable a given cluster's verification history is
+
+### Bonus Points Plan
+
+- **+2 Emerging Tech (exceptional use):** on-chain attestation trail described above, not just score hashing
+- **+2 Real pilot/partner conversation:** approach a specific market association, SACCO (e.g. Stima SACCO given its active green loan pilot), or county trade office *before* the pitch and be able to say "we've spoken with X and they're interested in piloting this with Y cluster" — this is worth actively pursuing in the 48 hours, even a short call or message thread counts as a credible starting conversation
+- **+1 Offline/low-bandwidth support:** this is highly relevant for the target users (market traders, often on low-end phones/patchy data). Build the self-report log to work offline-first (local storage, sync when connectivity returns) — this is a natural fit since informal SME zones (markets, jua kali sheds) often have unreliable connectivity. If your team has Expo/SQLite experience, this is a realistic 48-hour add given the offline-first patterns used in Saniflow Field.
+
+### Technology Integration — meeting and exceeding the bar
+
+Since Track 3 has no hard minimum tech-count requirement (unlike Track 7), the goal here is depth and coherence rather than checking boxes:
+- **Mobile app** — primary interface for self-report and verification
+- **Cloud backend** — hosts scoring logic, emission-factor engine, verifier reciprocity checks
+- **Blockchain** — trust anchor for the score (satisfies the Emerging Tech requirement)
+- **Offline-first local storage** — if built, doubles as both a feasibility strength and the +1 bonus
+
 ## Tech Stack (proposed)
 
 | Layer | Approach |
@@ -77,12 +111,13 @@ SACCOs, banks, and green-financing programs currently have green capital earmark
 
 ## Demo Script
 
-1. Live: a business owner logs a week's activity data
+1. Live: a business owner logs a week's activity data (ideally shown working offline, then syncing — hits both Technical Execution and the offline bonus)
 2. A neighboring business verifies the entry from their own phone
 3. Score computes and displays on the dashboard
 4. "Verified" badge with QR code generated
-5. Scan the QR to show the on-chain proof
-6. Close: *"This is loan-readiness in one click for an SME that's never had a credit file."*
+5. Scan the QR to show the on-chain proof — including the attestation trail, not just the final score
+6. If a pilot conversation has been secured: mention it explicitly here — "we've already spoken with [SACCO/market association/county office] about piloting this with [cluster]"
+7. Close: *"This is loan-readiness in one click for an SME that's never had a credit file."*
 
 ## Roadmap (post-hackathon)
 
@@ -98,4 +133,4 @@ _Add team member names and roles here._
 
 ## License
 
-_Add license here._
+LICENSE

@@ -56,14 +56,18 @@ flocksense/
 ├── web/                          # React (Vite) — dashboard
 │   ├── src/
 │   │   ├── pages/
+│   │   │   ├── Login.tsx         # cooperative admin/staff login
 │   │   │   ├── Dashboard.tsx
 │   │   │   ├── Farmers.tsx
 │   │   │   ├── FarmerDetail.tsx  # shows holdings breakdown
 │   │   │   ├── Verifications.tsx
 │   │   │   ├── Benchmarking.tsx  # filterable by livestock type
-│   │   │   └── Badge.tsx
+│   │   │   └── Badge.tsx         # public, no auth required
 │   │   ├── components/
-│   │   ├── services/              # API client
+│   │   │   └── ProtectedRoute.tsx # route guard, redirects to /login if no valid session
+│   │   ├── services/
+│   │   │   ├── api.ts             # API client
+│   │   │   └── auth.ts            # token storage, login/logout, session check
 │   │   └── types/
 │   ├── index.html
 │   └── package.json

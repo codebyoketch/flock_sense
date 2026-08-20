@@ -33,6 +33,7 @@ function RootNavigation() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="holding/[id]" options={{ headerShown: true, title: "Holding" }} />
       <Stack.Screen name="entry/[id]" options={{ headerShown: true, title: "Entry" }} />
+      <Stack.Screen name="ledger/[txId]" options={{ headerShown: true, title: "On-chain Proof" }} />
     </Stack>
   );
 }

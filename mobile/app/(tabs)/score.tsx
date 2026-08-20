@@ -1,12 +1,17 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, Pressable } from "react-native";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { getMyScore } from "@/services/scores";
-import type { ScoreSummary } from "@/types";
-import { useFocusEffect } from "expo-router";
+import { getBadge, getBadgeShareUrl, getQrImageUrl } from "@/services/badge";
+import { useAuth } from "@/context/AuthContext";
+import type { ScoreSummary, BadgeData } from "@/types";
+import { useFocusEffect, useRouter } from "expo-router";
 
 export default function Score() {
+  const router = useRouter();
+  const { farmer } = useAuth();
   const [score, setScore] = useState<ScoreSummary | null>(null);
+  const [badge, setBadge] = useState<BadgeData | null | undefined>(undefined); // undefined = loading
   const [error, setError] = useState(false);
 
   useFocusEffect(
@@ -14,7 +19,13 @@ export default function Score() {
       getMyScore()
         .then(setScore)
         .catch(() => setError(true));
-    }, [])
+
+      if (farmer?.farmerId) {
+        getBadge(farmer.farmerId)
+          .then(setBadge)
+          .catch(() => setBadge(null));
+      }
+    }, [farmer?.farmerId])
   );
 
   if (error) {
@@ -35,6 +46,29 @@ export default function Score() {
         <ScoreBadge grade={score.overallScore} size="large" />
         <Text style={styles.overallLabel}>Overall sustainability score</Text>
       </View>
+
+      {badge === undefined ? null : badge === null ? (
+        <View style={styles.badgeNotReadyCard}>
+          <Text style={styles.badgeNotReadyTitle}>Verified badge not shareable yet</Text>
+          <Text style={styles.badgeNotReadyBody}>
+            Verify a few more peers to activate your score for sharing with cooperatives, buyers, or lenders.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.badgeCard}>
+          <Text style={styles.badgeCardTitle}>Verified badge</Text>
+          <Image source={{ uri: getQrImageUrl(getBadgeShareUrl(farmer!.farmerId)) }} style={styles.qrImage} />
+          <Text style={styles.badgeMeta}>
+            Verified {new Date(badge.verifiedAt).toLocaleDateString()} · {badge.chain}
+          </Text>
+          <Pressable
+            style={styles.proofButton}
+            onPress={() => router.push(`/ledger/${badge.ledgerTxId}`)}
+          >
+            <Text style={styles.proofButtonText}>View on-chain proof</Text>
+          </Pressable>
+        </View>
+      )}
 
       <Text style={styles.sectionTitle}>By holding</Text>
       {score.holdings.map((h) => (
@@ -72,4 +106,30 @@ const styles = StyleSheet.create({
   recCard: { backgroundColor: "#fff", borderRadius: 8, padding: 12, marginTop: 12 },
   recTitle: { fontSize: 13, fontWeight: "700", color: "#2e7d32" },
   recBody: { fontSize: 13, color: "#555", marginTop: 4 },
+  badgeCard: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  badgeCardTitle: { fontSize: 15, fontWeight: "700", marginBottom: 12 },
+  qrImage: { width: 180, height: 180, borderRadius: 8, backgroundColor: "#fff" },
+  badgeMeta: { fontSize: 12, color: "#777", marginTop: 12 },
+  proofButton: {
+    marginTop: 14,
+    backgroundColor: "#2e7d32",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  proofButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  badgeNotReadyCard: {
+    backgroundColor: "#fff3e0",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  badgeNotReadyTitle: { fontSize: 14, fontWeight: "700", color: "#e65100" },
+  badgeNotReadyBody: { fontSize: 13, color: "#8a5a1f", marginTop: 4 },
 });

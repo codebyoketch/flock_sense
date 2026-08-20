@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, Pressable, Alert, Modal, TextInput } from "react-native";
 import { getPendingVerifications, submitVerification, getReciprocity } from "@/services/verification";
 import type { PendingVerification, Reciprocity } from "@/types";
 import { useFocusEffect } from "expo-router";
@@ -8,6 +8,8 @@ export default function Verify() {
   const [items, setItems] = useState<PendingVerification[]>([]);
   const [reciprocity, setReciprocity] = useState<Reciprocity | null>(null);
   const [busyEntryId, setBusyEntryId] = useState<string | null>(null);
+  const [flaggingEntryId, setFlaggingEntryId] = useState<string | null>(null);
+  const [flagNote, setFlagNote] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -25,18 +27,20 @@ export default function Verify() {
     }, [load])
   );
 
-  const handleVerdict = async (entryId: string, verdict: "confirm" | "flag") => {
+  const handleVerdict = (entryId: string, verdict: "confirm" | "flag") => {
     if (verdict === "flag") {
-      Alert.prompt?.(
-        "Flag this entry",
-        "What looks off?",
-        async (note) => {
-          await runVerdict(entryId, "flag", note);
-        }
-      ) ?? (await runVerdict(entryId, "flag"));
+      setFlagNote("");
+      setFlaggingEntryId(entryId);
       return;
     }
-    await runVerdict(entryId, "confirm");
+    runVerdict(entryId, "confirm");
+  };
+
+  const submitFlag = async () => {
+    if (!flaggingEntryId) return;
+    const entryId = flaggingEntryId;
+    setFlaggingEntryId(null);
+    await runVerdict(entryId, "flag", flagNote.trim());
   };
 
   const runVerdict = async (entryId: string, verdict: "confirm" | "flag", note?: string) => {
@@ -96,6 +100,32 @@ export default function Verify() {
           </View>
         )}
       />
+
+      <Modal visible={flaggingEntryId !== null} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>What looks off?</Text>
+            <Text style={styles.modalSubtitle}>
+              Optional — helps the cooperative review this entry faster.
+            </Text>
+            <TextInput
+              style={styles.noteInput}
+              placeholder="e.g. feed quantity looks too low for this flock size"
+              value={flagNote}
+              onChangeText={setFlagNote}
+              multiline
+              numberOfLines={3}
+              autoFocus
+            />
+            <Pressable style={styles.submitFlagButton} onPress={submitFlag}>
+              <Text style={styles.submitFlagText}>Submit flag</Text>
+            </Pressable>
+            <Pressable onPress={() => setFlaggingEntryId(null)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -114,4 +144,20 @@ const styles = StyleSheet.create({
   confirmText: { color: "#fff", fontWeight: "600", fontSize: 13 },
   flagButton: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#c62828" },
   flagText: { color: "#c62828", fontWeight: "600", fontSize: 13 },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalCard: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, gap: 12 },
+  modalTitle: { fontSize: 18, fontWeight: "700" },
+  modalSubtitle: { fontSize: 13, color: "#777", marginTop: -8 },
+  noteInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 15,
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  submitFlagButton: { backgroundColor: "#c62828", borderRadius: 8, padding: 14, alignItems: "center" },
+  submitFlagText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  cancelText: { textAlign: "center", color: "#777", padding: 6 },
 });

@@ -32,12 +32,27 @@ export async function getUnsyncedEntries(): Promise<Entry[]> {
   return rows.map((r) => JSON.parse(r.payload_json) as Entry);
 }
 
-/** Marks a locally-queued entry as synced once the server confirms it. */
-export async function markEntrySynced(clientId: string, entryId: string, status: Entry["status"]) {
+/**
+ * Marks a locally-queued entry as synced once the server confirms it. Takes the
+ * full updated Entry (caller merges the server response into the local record)
+ * and rewrites both the flat columns *and* payload_json, since reads like
+ * getEntriesForHolding only ever look at payload_json — updating just the
+ * columns would leave the UI showing stale "queued" data forever.
+ */
+export async function markEntrySynced(entry: Entry): Promise<void> {
   const db = await getDb();
+  const syncedAt = entry.syncedAt ?? new Date().toISOString();
+  const finalEntry: Entry = { ...entry, syncedAt };
   await db.runAsync(
-    `UPDATE entries SET entry_id = ?, status = ?, synced_at = ? WHERE client_id = ?`,
-    [entryId, status, new Date().toISOString(), clientId]
+    `UPDATE entries SET entry_id = ?, status = ?, synced_at = ?, estimated_co2e_kg = ?, payload_json = ? WHERE client_id = ?`,
+    [
+      finalEntry.entryId ?? null,
+      finalEntry.status,
+      syncedAt,
+      finalEntry.estimatedCo2eKg ?? null,
+      JSON.stringify(finalEntry),
+      finalEntry.clientId,
+    ]
   );
 }
 

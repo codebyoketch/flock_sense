@@ -52,7 +52,7 @@ export default function LogEntry() {
 
     setSubmitting(true);
     try {
-      await logEntry({
+      const saved = await logEntry({
         holdingId,
         periodStart: weekAgo.toISOString().slice(0, 10),
         periodEnd: now.toISOString().slice(0, 10),
@@ -61,8 +61,17 @@ export default function LogEntry() {
         water: { quantityLiters: parseFloat(waterLiters) },
         wasteHandling,
       });
-      // Saved locally regardless of connectivity — sync happens in the background.
-      Alert.alert("Saved", "Your entry has been logged and will sync automatically.");
+      // Saved locally regardless of connectivity. If we were online, logEntry already
+      // synced it and estimatedCo2eKg will be set — show it. Otherwise it'll sync
+      // in the background and the estimate will appear later on the entry/holding screens.
+      if (saved.estimatedCo2eKg != null) {
+        Alert.alert(
+          "Saved",
+          `Logged — an estimated ${saved.estimatedCo2eKg.toFixed(1)} kg CO2e for this period. Awaiting peer verification.`
+        );
+      } else {
+        Alert.alert("Saved", "Your entry has been logged and will sync automatically.");
+      }
       resetForm();
     } catch (e: any) {
       Alert.alert("Couldn't save entry", e.message ?? "Please try again.");

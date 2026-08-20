@@ -75,3 +75,27 @@ export interface ScoreSummary {
   computedAt: string;
   holdings: HoldingScore[];
 }
+
+export interface BadgeData {
+  farmerName: string;
+  cooperativeName: string;
+  overallScore: ScoreGrade;
+  verifiedAt: string;
+  holdingsBreakdown: { type: LivestockType; score: ScoreGrade }[];
+  ledgerTxId: string;
+  chain: string;
+}
+
+export interface AttestationEntry {
+  verifierIdHash: string;
+  entryId: string;
+  verdict: "confirm" | "flag";
+  timestamp: string;
+}
+
+export interface LedgerProof {
+  txId: string;
+  anchoredAt: string;
+  scoreHash: string;
+  attestationTrail: AttestationEntry[];
+}

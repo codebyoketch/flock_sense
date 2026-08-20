@@ -8,7 +8,8 @@
     "userInterfaceStyle": "light",
     "scheme": "flocksense",
     "extra": {
-      "apiBaseUrl": "https://api.flocksense.app/api/v1"
+      "apiBaseUrl": "https://api.flocksense.app/api/v1",
+      "webBaseUrl": "https://flocksense.app"
     },
     "ios": {
       "supportsTablet": true

@@ -13,7 +13,7 @@ export async function submitVerification(
 ): Promise<{ verificationsSoFar: number; verificationsRequired: number }> {
   return apiRequest(`/verifications`, {
     method: "POST",
-    body: { entry_id: entryId, verdict, note: note ?? "" },
+    body: { entryId, verdict, note: note ?? "" },
   });
 }
 

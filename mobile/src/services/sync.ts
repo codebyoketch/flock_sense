@@ -1,6 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { apiRequest } from "./api";
 import { getUnsyncedEntries, markEntrySynced } from "@/storage/entryQueue";
+import { toEntryPayload } from "./entryPayload";
 import type { Entry, EntryStatus } from "@/types";
 
 interface SyncResultItem {
@@ -25,12 +26,14 @@ export async function syncQueuedEntries(): Promise<{ synced: number; failed: boo
   try {
     const res = await apiRequest<{ results: SyncResultItem[] }>("/entries/sync", {
       method: "POST",
-      body: { entries: queued },
+      body: { entries: queued.map(toEntryPayload) },
     });
 
     for (const item of res.results) {
-      const status: EntryStatus = "pending_verification";
-      await markEntrySynced(item.clientId, item.entryId, status);
+      const original = queued.find((q) => q.clientId === item.clientId);
+      if (!original) continue;
+      const status: EntryStatus = "pending_verification"; // both "created" and "duplicate" mean it now exists server-side
+      await markEntrySynced({ ...original, entryId: item.entryId, status });
     }
 
     return { synced: res.results.length, failed: false };

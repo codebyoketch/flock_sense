@@ -16,3 +16,9 @@ func (r *HoldingRepository) List(farmerID string) ([]models.Holding, error) {
 }
 
 func (r *HoldingRepository) Create(holding *models.Holding) error { return r.db.Create(holding).Error }
+
+func (r *HoldingRepository) ListByType(livestockType string) ([]models.Holding, error) {
+	var holdings []models.Holding
+	err := r.db.Where("type = ? AND deleted_at IS NULL", livestockType).Find(&holdings).Error
+	return holdings, err
+}

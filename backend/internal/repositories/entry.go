@@ -14,3 +14,9 @@ func (r *EntryRepository) ListByFarmer(farmerID string) ([]models.Entry, error) 
 	err := r.db.Where("farmer_id = ?", farmerID).Find(&entries).Error
 	return entries, err
 }
+
+func (r *EntryRepository) ListByHolding(holdingID string) ([]models.Entry, error) {
+	var entries []models.Entry
+	err := r.db.Where("holding_id = ?", holdingID).Find(&entries).Error
+	return entries, err
+}

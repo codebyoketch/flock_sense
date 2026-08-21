@@ -23,6 +23,28 @@ type Server struct {
 	Chain  blockchain.Client
 }
 
+type holdingRequest struct {
+	Type  string `json:"type"`
+	Count int    `json:"count"`
+}
+
+type syncEntriesRequest struct {
+	Entries []entryRequest `json:"entries"`
+}
+
+type entryRequest struct {
+	ClientID      string  `json:"client_id"`
+	HoldingID     string  `json:"holding_id"`
+	PeriodStart   string  `json:"period_start"`
+	PeriodEnd     string  `json:"period_end"`
+	FeedType      string  `json:"feed_type"`
+	FeedKg        float64 `json:"feed_kg"`
+	EnergySource  string  `json:"energy_source"`
+	EnergyKwh     float64 `json:"energy_kwh"`
+	WaterLiters   float64 `json:"water_liters"`
+	WasteHandling string  `json:"waste_handling"`
+}
+
 func New(database *gorm.DB, secret string) *Server {
 	if secret == "" {
 		secret = "development-secret"
@@ -62,7 +84,12 @@ func (s *Server) router() *gin.Engine {
 func (s *Server) auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
-		t, err := jwt.Parse(h, func(t *jwt.Token) (any, error) { return s.Secret, nil })
+		t, err := jwt.Parse(h, func(t *jwt.Token) (any, error) {
+			if t.Method != jwt.SigningMethodHS256 {
+				return nil, fmt.Errorf("unexpected signing method")
+			}
+			return s.Secret, nil
+		})
 		if err != nil || !t.Valid {
 			c.AbortWithStatusJSON(401, gin.H{"error": gin.H{"code": "UNAUTHORIZED", "message": "valid bearer token required"}})
 			return
@@ -72,7 +99,12 @@ func (s *Server) auth() gin.HandlerFunc {
 			c.AbortWithStatus(401)
 			return
 		}
-		c.Set("farmer_id", claims["farmer_id"])
+		farmerID, ok := claims["farmer_id"].(string)
+		if !ok || farmerID == "" {
+			c.AbortWithStatusJSON(401, gin.H{"error": gin.H{"code": "UNAUTHORIZED", "message": "token identity is missing"}})
+			return
+		}
+		c.Set("farmer_id", farmerID)
 		c.Next()
 	}
 }
@@ -133,10 +165,7 @@ func (s *Server) listHoldings(c *gin.Context) {
 	c.JSON(200, gin.H{"data": h, "page": 1, "page_size": len(h), "total": len(h)})
 }
 func (s *Server) createHolding(c *gin.Context) {
-	var in struct {
-		Type  string
-		Count int
-	}
+	var in holdingRequest
 	c.ShouldBindJSON(&in)
 	if in.Count <= 0 || !validType(in.Type) {
 		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "valid type and positive count required"}})
@@ -173,10 +202,7 @@ func (s *Server) deleteHolding(c *gin.Context) {
 	c.Status(204)
 }
 func (s *Server) createEntry(c *gin.Context) {
-	var in struct {
-		ClientID, HoldingID, PeriodStart, PeriodEnd, FeedType, EnergySource, WasteHandling string
-		FeedKg, EnergyKwh, WaterLiters                                                     float64
-	}
+	var in entryRequest
 	c.ShouldBindJSON(&in)
 	var h models.Holding
 	if s.DB.First(&h, "id = ? AND farmer_id = ?", in.HoldingID, s.farmerID(c)).Error != nil {
@@ -195,13 +221,11 @@ func (s *Server) createEntry(c *gin.Context) {
 	c.JSON(201, e)
 }
 func (s *Server) syncEntries(c *gin.Context) {
-	var in struct {
-		Entries []struct {
-			ClientID, HoldingID, PeriodStart, PeriodEnd, FeedType, EnergySource, WasteHandling string
-			FeedKg, EnergyKwh, WaterLiters                                                     float64
-		}
+	var in syncEntriesRequest
+	if c.ShouldBindJSON(&in) != nil {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "entries are required"}})
+		return
 	}
-	c.ShouldBindJSON(&in)
 	results := []gin.H{}
 	for _, x := range in.Entries {
 		var old models.Entry
@@ -209,7 +233,23 @@ func (s *Server) syncEntries(c *gin.Context) {
 			results = append(results, gin.H{"client_id": x.ClientID, "status": "duplicate", "entry_id": old.ID})
 			continue
 		}
-		results = append(results, gin.H{"client_id": x.ClientID, "status": "queued"})
+		var h models.Holding
+		if s.DB.First(&h, "id = ? AND farmer_id = ? AND deleted_at IS NULL", x.HoldingID, s.farmerID(c)).Error != nil {
+			results = append(results, gin.H{"client_id": x.ClientID, "status": "rejected", "reason": "holding_not_found"})
+			continue
+		}
+		start, startErr := time.Parse("2006-01-02", x.PeriodStart)
+		end, endErr := time.Parse("2006-01-02", x.PeriodEnd)
+		if startErr != nil || endErr != nil {
+			results = append(results, gin.H{"client_id": x.ClientID, "status": "rejected", "reason": "invalid_period"})
+			continue
+		}
+		e := models.Entry{ClientID: x.ClientID, FarmerID: s.farmerID(c), HoldingID: h.ID, PeriodStart: start, PeriodEnd: end, FeedType: x.FeedType, FeedKg: x.FeedKg, EnergySource: x.EnergySource, EnergyKwh: x.EnergyKwh, WaterLiters: x.WaterLiters, WasteHandling: x.WasteHandling, EstimatedCO2e: emissions.Calculate(emissions.Input{HoldingType: h.Type, EnergySource: x.EnergySource, WasteHandling: x.WasteHandling, FeedKg: x.FeedKg, EnergyKwh: x.EnergyKwh, WaterLiters: x.WaterLiters})}
+		if err := s.DB.Create(&e).Error; err != nil {
+			results = append(results, gin.H{"client_id": x.ClientID, "status": "rejected", "reason": "database_error"})
+			continue
+		}
+		results = append(results, gin.H{"client_id": x.ClientID, "status": "created", "entry_id": e.ID})
 	}
 	c.JSON(200, gin.H{"results": results})
 }
@@ -374,7 +414,7 @@ func (s *Server) ledger(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	c.JSON(200, a)
+	c.JSON(200, gin.H{"tx_id": a.TxID, "score_hash": a.ScoreHash, "chain": a.Chain, "attestation_trail": a.AttestationTrail, "anchored_at": a.AnchoredAt})
 }
 func hash(v string) string {
 	h := sha256.Sum256([]byte(v))

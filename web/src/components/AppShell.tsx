@@ -8,6 +8,7 @@ import {
   UserRound, X, ClipboardCheck, Home,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { api } from '../services/api';
 import { clearToken } from '../services/auth';
 import '../theme/shell.css';
 import '../theme/primitives.css';
@@ -32,7 +33,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   const pendingCount = verifications.length;
 
-  function handleSignOut() {
+  async function handleSignOut() {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Clearing the local credential still signs the user out if the API is unreachable.
+    }
     clearToken();
     navigate('/');
   }
@@ -121,7 +127,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               <p className="shell-topbar-eyebrow">
                 {farmer?.name ?? 'Your Farm'}{' '}
                 <span style={{ margin: '0 6px', color: '#9CAF88' }}>/</span>
-                {farmer?.location?.label ?? '—'}
+                {farmer?.location ?? '—'}
               </p>
               <p className="shell-topbar-sub">
                 {new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} reporting period

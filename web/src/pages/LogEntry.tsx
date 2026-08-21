@@ -95,14 +95,28 @@ export default function LogEntry() {
       setError('Fill in every field before submitting.');
       return;
     }
+    const feedKg = Number(feedQuantity);
+    const energyKwh = Number(energyQuantity);
+    const waterLiters = Number(waterQuantity);
+    if (![feedKg, energyKwh, waterLiters].every((value) => Number.isFinite(value) && value >= 0)) {
+      setError('Use zero or a positive number for each measurement.');
+      return;
+    }
+    if (!periodStart || !periodEnd || periodStart > periodEnd) {
+      setError('Choose a reporting period with an end date on or after the start date.');
+      return;
+    }
+    // Go's entryRequest uses flat fields: feed_type, feed_kg, energy_source, energy_kwh, water_liters
     const payload: CreateEntryRequest = {
       client_id:      generateClientId(),
       holding_id:     holdingId,
       period_start:   periodStart,
       period_end:     periodEnd,
-      feed:           { type: feedType, quantity_kg: Number(feedQuantity) },
-      energy:         { source: energySource, quantity_kwh: Number(energyQuantity) },
-      water:          { quantity_liters: Number(waterQuantity) },
+      feed_type:      feedType,
+      feed_kg:        feedKg,
+      energy_source:  energySource,
+      energy_kwh:     energyKwh,
+      water_liters:   waterLiters,
       waste_handling: wasteHandling,
     };
     setSubmitting(true);

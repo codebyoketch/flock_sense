@@ -5,17 +5,18 @@ import { royalFlockTheme } from '../theme';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
+import { setToken } from '../services/auth';
+import { api, ApiRequestError } from '../services/api';
+
+type AuthResponse = { farmer_id: string; token: string; expires_at: string };
 
 export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     phone: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    farmName: '',
     animalType: 'poultry',
     herdSize: '',
   });
@@ -26,7 +27,6 @@ export default function Register() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    // Clear error when user types
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' });
     }
@@ -34,18 +34,9 @@ export default function Register() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-
     if (!form.name) newErrors.name = 'Full name is required';
     if (!form.phone) newErrors.phone = 'Phone number is required';
-    if (!form.password) newErrors.password = 'Password is required';
-    if (form.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    if (form.password !== form.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
     if (!form.herdSize) newErrors.herdSize = 'Herd size is required';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -53,14 +44,32 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
+    setApiError(null);
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // Step 1: Register → get token
+      const body = await api.post<AuthResponse>('/auth/register', {
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+      });
+      setToken(body.token);
+
+      // Step 2: Create first holding
+      if (form.herdSize && form.animalType) {
+        await api.post('/holdings', {
+          type: form.animalType,
+          count: parseInt(form.herdSize, 10),
+        });
+      }
+
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      setApiError(err instanceof ApiRequestError ? err.message : 'Registration failed. Try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div
@@ -109,7 +118,7 @@ export default function Register() {
             <Input
               label="Phone Number"
               type="tel"
-              placeholder="0712345678"
+              placeholder="+254712345678"
               name="phone"
               value={form.phone}
               onChange={handleChange}
@@ -117,23 +126,6 @@ export default function Register() {
               required
             />
           </div>
-
-          <Input
-            label="Email (Optional)"
-            type="email"
-            placeholder="mary@farm.com"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-          />
-
-          <Input
-            label="Farm Name"
-            placeholder="Green Acres Farm"
-            name="farmName"
-            value={form.farmName}
-            onChange={handleChange}
-          />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
             <div style={{ marginBottom: spacing.md }}>
@@ -166,8 +158,7 @@ export default function Register() {
                 <option value="poultry">🐔 Poultry</option>
                 <option value="dairy">🐄 Dairy</option>
                 <option value="goats">🐐 Goats</option>
-                <option value="sheep">🐑 Sheep</option>
-                <option value="cattle">🐂 Cattle</option>
+                <option value="other">🐾 Other livestock</option>
               </select>
             </div>
 
@@ -183,29 +174,11 @@ export default function Register() {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Create a password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              error={errors.password}
-              required
-            />
-
-            <Input
-              label="Confirm Password"
-              type="password"
-              placeholder="Confirm your password"
-              name="confirmPassword"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              error={errors.confirmPassword}
-              required
-            />
-          </div>
+          {apiError && (
+            <p style={{ color: '#B00020', fontSize: typography.sizes.small, marginBottom: spacing.md }}>
+              {apiError}
+            </p>
+          )}
 
           <Button type="submit" fullWidth loading={loading}>
             Create Account →

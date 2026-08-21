@@ -43,68 +43,70 @@ Response wrapper:
 
 ## 1. Auth
 
+All authentication endpoints are public unless noted. Protected routes use `Authorization: Bearer <token>`.
+
 ### POST `/auth/register` — Public
-Farmer self-registration (mobile).
+Legacy direct farmer registration. OTP onboarding is recommended for new clients.
+
 ```json
-// Request
 {
   "phone": "+254712345678",
   "name": "Jane Wanjiru",
-  "cooperative_id": "coop_001",
-  "location": { "lat": -0.0917, "lng": 34.7680, "label": "Kisumu County" }
+  "cooperative_id": "coop_001"
 }
 ```
+
+### POST `/auth/otp/request` — Public
+Creates a five-minute OTP challenge. Requests are limited to five per phone per hour.
+
 ```json
-// 201 Response
+{ "phone": "+254712345678" }
+```
+
+Response includes `challenge_id` and `expires_at`. In `APP_ENV=development` or `test`, it also includes `dev_code` for local demos only.
+
+### POST `/auth/otp/verify` — Public
+Verifies a challenge. Existing farmers receive a JWT; unregistered phones receive `{ "verified": true }` for onboarding.
+
+```json
 {
-  "farmer_id": "frm_8f2a",
-  "token": "eyJ...",
-  "expires_at": "2026-09-19T00:00:00Z"
+  "challenge_id": "...",
+  "phone": "+254712345678",
+  "code": "482913"
+}
+```
+
+### POST `/auth/otp/register` — Public
+Verifies an OTP and creates a new farmer in one operation. Returns `farmer_id`, `token`, and `expires_at`.
+
+```json
+{
+  "challenge_id": "...",
+  "phone": "+254712345678",
+  "code": "482913",
+  "name": "Jane Wanjiru",
+  "cooperative_id": "coop_001"
 }
 ```
 
 ### POST `/auth/login` — Public
-Phone-based OTP login (mobile, farmers).
+Legacy phone login for existing farmers. New clients should use the OTP flow above.
+
 ```json
-// Request (step 1: request OTP)
 { "phone": "+254712345678" }
-// 200 Response
-{ "otp_sent": true, "expires_in_seconds": 300 }
-```
-```json
-// Request (step 2: verify OTP)
-{ "phone": "+254712345678", "otp": "482913" }
-// 200 Response
-{ "farmer_id": "frm_8f2a", "token": "eyJ...", "expires_at": "..." }
 ```
 
 ### POST `/auth/admin/login` — Public
-Cooperative admin login (web dashboard), email/password.
-```json
-// Request
-{ "email": "admin@lakehub-coop.org", "password": "..." }
-// 200 Response
-{
-  "user_id": "usr_112",
-  "cooperative_id": "coop_001",
-  "role": "cooperative_admin",
-  "token": "eyJ...",
-  "expires_at": "..."
-}
-```
+Optional cooperative-admin login. This flow is not required for the current farmer MVP.
 
-### POST `/auth/refresh`
+### POST `/auth/refresh` — Public
+
 ```json
-// Request
 { "refresh_token": "..." }
-// 200 Response
-{ "token": "eyJ...", "expires_at": "..." }
 ```
 
-### POST `/auth/logout`
-`204 No Content`
-
----
+### POST `/auth/logout` — Farmer JWT
+`204 No Content`. The token is revoked in the running API process.
 
 ## 2. Farmers
 

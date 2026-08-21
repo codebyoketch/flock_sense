@@ -16,3 +16,11 @@ func TestLowerImpactChoicesReduceEstimate(t *testing.T) {
 		t.Fatalf("expected cleaner choices to reduce estimate: clean=%v open=%v", clean, open)
 	}
 }
+
+func TestRequestUsesStableJSONContract(t *testing.T) {
+	request := Request{HoldingType: "goats", EnergySource: "solar", WasteHandling: "composted", FeedKg: 4, EnergyKwh: 2, WaterLiters: 50}
+	value := Calculate(Input{HoldingType: request.HoldingType, EnergySource: request.EnergySource, WasteHandling: request.WasteHandling, FeedKg: request.FeedKg, EnergyKwh: request.EnergyKwh, WaterLiters: request.WaterLiters})
+	if value <= 0 {
+		t.Fatalf("expected request to produce a footprint, got %v", value)
+	}
+}

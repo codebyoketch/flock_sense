@@ -29,6 +29,7 @@ type Server struct {
 	Footprint    *handlers.FootprintHandler
 	Reports      *handlers.ReportHandler
 	Benchmarks   *handlers.BenchmarkHandler
+	Verification *handlers.VerificationHandler
 }
 
 type holdingRequest struct {
@@ -65,7 +66,9 @@ func New(database *gorm.DB, secret string) *Server {
 	footprintService := services.NewFootprintService(entryRepository)
 	reportService := services.NewReportService(farmerRepository, entryRepository)
 	benchmarkService := services.NewBenchmarkService(holdingRepository, entryRepository)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService)}
+	verificationRepository := repositories.NewVerificationRepository(database)
+	verificationService := services.NewVerificationService(verificationRepository)
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -87,7 +90,7 @@ func (s *Server) router() *gin.Engine {
 	a.GET("/holdings/:id/entries", s.listEntries)
 	a.GET("/verifications/pending", s.pending)
 	a.POST("/verifications", s.verify)
-	a.GET("/verifications/reciprocity", s.reciprocity)
+	a.GET("/verifications/reciprocity", s.Verification.Reciprocity)
 	a.GET("/scores/me", s.score)
 	a.POST("/calculations", s.Calculations.Calculate)
 	a.GET("/footprint/me", s.Footprint.Me)

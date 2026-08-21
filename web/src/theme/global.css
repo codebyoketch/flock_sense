@@ -3,6 +3,8 @@
 
 /* ── Design tokens ── */
 :root {
+  color-scheme: light;
+
   /* Brand */
   --color-primary:     #800020;
   --color-secondary:   #FF8C42;
@@ -48,6 +50,11 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+button, input, select, textarea {
+  color: var(--color-text-primary);
 }
 
 a {

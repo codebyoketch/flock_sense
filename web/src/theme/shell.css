@@ -11,15 +11,21 @@
 /* ── SIDEBAR ── */
 .shell-sidebar {
   position: fixed;
+  top: 0;
+  bottom: 0;
   inset-y: 0;
   left: 0;
   z-index: 40;
   width: 252px;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--color-primary);
   padding: 20px 16px;
   overflow: hidden;
+  box-shadow: 8px 0 24px rgba(45,27,27,0.08);
 }
 
 /* Decorative circles */

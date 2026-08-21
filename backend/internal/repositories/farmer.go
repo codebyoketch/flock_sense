@@ -21,3 +21,5 @@ func (r *FarmerRepository) FindByPhone(phone string) (models.Farmer, error) {
 	err := r.db.Where("phone = ?", phone).First(&farmer).Error
 	return farmer, err
 }
+
+func (r *FarmerRepository) Save(farmer *models.Farmer) error { return r.db.Save(farmer).Error }

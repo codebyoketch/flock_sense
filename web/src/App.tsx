@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppShell from "./components/AppShell";
+import { ToastProvider } from "./components/Toast";
 import { AppProvider } from "./contexts/AppContext";
 
 // Public pages
@@ -37,8 +38,9 @@ function WorkspaceLayout() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
         {/* Public routes */}
         <Route path="/"         element={<Landing />} />
         <Route path="/login"    element={<Login />} />
@@ -62,8 +64,9 @@ function App() {
             <Route path="/holding/:id"     element={<HoldingDetail />} />
           </Route>
         </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

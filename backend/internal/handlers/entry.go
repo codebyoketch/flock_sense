@@ -35,3 +35,12 @@ func (h *EntryHandler) Sync(c *gin.Context) {
 	results := h.service.Sync(c.GetString("farmer_id"), input.Entries)
 	c.JSON(200, gin.H{"results": results})
 }
+
+func (h *EntryHandler) ListByHolding(c *gin.Context) {
+	entries, err := h.service.ListByHolding(c.GetString("farmer_id"), c.Param("id"))
+	if err != nil {
+		c.Status(404)
+		return
+	}
+	c.JSON(200, gin.H{"data": entries, "page": 1, "page_size": len(entries), "total": len(entries)})
+}

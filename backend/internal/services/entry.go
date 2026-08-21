@@ -12,6 +12,7 @@ type OwnedHoldingStore interface {
 type EntryWriter interface {
 	FindByClientID(clientID string) (models.Entry, error)
 	Create(*models.Entry) error
+	ListByHolding(holdingID string) ([]models.Entry, error)
 }
 type EntryInput struct {
 	ClientID      string  `json:"client_id"`
@@ -78,4 +79,11 @@ func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
 		results = append(results, SyncResult{ClientID: input.ClientID, Status: status, EntryID: entry.ID})
 	}
 	return results
+}
+
+func (s *EntryService) ListByHolding(farmerID, holdingID string) ([]models.Entry, error) {
+	if _, err := s.holdings.FindOwned(holdingID, farmerID); err != nil {
+		return nil, err
+	}
+	return s.entries.ListByHolding(holdingID)
 }

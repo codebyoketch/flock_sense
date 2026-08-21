@@ -7,7 +7,7 @@ import { PageTitle, MetricCard, ScoreDial, DimensionMeter, RecommendationCard, S
 import { FootprintTrend } from '../components/Charts';
 
 export default function Overview() {
-  const { farmer, primaryHolding, latestEntry, loading } = useApp();
+  const { farmer, primaryHolding, latestEntry, trendData, loading } = useApp();
 
   const farmerName = farmer?.name?.split(' ')[0] ?? 'Farmer';
 
@@ -45,9 +45,15 @@ export default function Overview() {
     );
   }
 
-  const calc = calculateFromEntry(latestEntry, primaryHolding.count);
-  const rec  = getRecommendation(calc, latestEntry.waste_handling, latestEntry.energy.source);
+  const calc = calculateFromEntry(latestEntry, primaryHolding.count, primaryHolding.type);
+  // Go Entry uses flat fields: energy_source, waste_handling
+  const rec  = getRecommendation(
+    calc,
+    latestEntry.waste_handling,
+    latestEntry.energy_source,
+  );
   const verified = latestEntry.status === 'verified';
+
 
   return (
     <>
@@ -104,7 +110,7 @@ export default function Overview() {
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Historical footprint</p>
         <h2 style={{ marginTop: 4, fontSize: 18, fontWeight: 700, letterSpacing: '-0.035em' }}>Your sustainability trend</h2>
         <div style={{ marginTop: 16 }}>
-          <FootprintTrend />
+          <FootprintTrend data={trendData.length >= 2 ? trendData : undefined} />
         </div>
       </article>
     </>

@@ -5,13 +5,14 @@ import {
   Cell, Pie, PieChart, BarChart, Bar,
 } from 'recharts';
 import type { EmissionBreakdown } from '../lib/engine';
-import { placeholderTrend } from '../lib/engine';
-
-type TrendPoint = { month: string; farm: number; cooperative: number };
+type TrendPoint = { month: string; farm: number; cooperative?: number };
 
 /* ── Footprint Trend Line ── */
 export function FootprintTrend({ data }: { data?: TrendPoint[] }) {
-  const points = data && data.length >= 2 ? data : placeholderTrend;
+  const points = data ?? [];
+  if (points.length < 2) {
+    return <p style={{ padding: '44px 0', textAlign: 'center', fontSize: 13, color: '#6B5B5B' }}>Log at least two periods to see your trend.</p>;
+  }
   return (
     <ResponsiveContainer width="100%" height={180}>
       <LineChart data={points} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -19,7 +20,7 @@ export function FootprintTrend({ data }: { data?: TrendPoint[] }) {
         <YAxis tick={{ fontSize: 11, fill: '#6B5B5B' }} axisLine={false} tickLine={false} />
         <Tooltip
           contentStyle={{ background: '#fff', border: '1px solid #EDE0E0', borderRadius: 12, fontSize: 12 }}
-          formatter={(v: number) => [`${v.toFixed(2)} tCO₂e`]}
+          formatter={(v) => [`${Number(v ?? 0).toFixed(2)} tCO₂e`]}
         />
         <Legend
           iconType="circle"
@@ -33,14 +34,6 @@ export function FootprintTrend({ data }: { data?: TrendPoint[] }) {
           strokeWidth={2.5}
           dot={{ r: 3, fill: '#800020' }}
           activeDot={{ r: 5 }}
-        />
-        <Line
-          dataKey="cooperative"
-          name="Cooperative"
-          stroke="#FF8C42"
-          strokeWidth={2}
-          strokeDasharray="4 3"
-          dot={false}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -85,7 +78,7 @@ export function EmissionsDonut({
           </Pie>
           <Tooltip
             contentStyle={{ background: '#fff', border: '1px solid #EDE0E0', borderRadius: 12, fontSize: 12 }}
-            formatter={(v: number) => [`${Math.round(v).toLocaleString()} kg CO₂e`]}
+            formatter={(v) => [`${Math.round(Number(v ?? 0)).toLocaleString()} kg CO₂e`]}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -113,16 +106,12 @@ export function EmissionsDonut({
 }
 
 /* ── Benchmark Bars ── */
-const benchmarkData = [
-  { name: 'Your farm',    value: 7.3,  fill: '#800020' },
-  { name: 'Cooperative',  value: 8.9,  fill: '#FF8C42' },
-  { name: 'Region avg.',  value: 10.1, fill: '#9CAF88' },
-];
+export type BenchmarkBar = { name: string; value: number; fill: string };
 
-export function BenchmarkBars() {
+export function BenchmarkBars({ data }: { data: BenchmarkBar[] }) {
   return (
     <ResponsiveContainer width="100%" height={160}>
-      <BarChart data={benchmarkData} layout="vertical" margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
         <XAxis
           type="number"
           tick={{ fontSize: 11, fill: '#6B5B5B' }}
@@ -140,10 +129,10 @@ export function BenchmarkBars() {
         />
         <Tooltip
           contentStyle={{ background: '#fff', border: '1px solid #EDE0E0', borderRadius: 12, fontSize: 12 }}
-          formatter={(v: number) => [`${v} kg CO₂e / animal`]}
+          formatter={(v) => [`${Number(v ?? 0).toFixed(1)} kg CO₂e / animal`]}
         />
         <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24}>
-          {benchmarkData.map((d) => <Cell key={d.name} fill={d.fill} />)}
+          {data.map((d) => <Cell key={d.name} fill={d.fill} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>

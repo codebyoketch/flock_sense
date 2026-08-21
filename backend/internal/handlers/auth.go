@@ -65,3 +65,25 @@ func (h *AdminAuthHandler) Login(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"user_id": admin.ID, "cooperative_id": admin.CooperativeID, "role": admin.Role, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
 }
+
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var input struct {
+		RefreshToken string `json:"refresh_token"`
+		Token        string `json:"token"`
+	}
+	if c.ShouldBindJSON(&input) != nil {
+		c.Status(400)
+		return
+	}
+	value := input.RefreshToken
+	if value == "" {
+		value = input.Token
+	}
+	token, err := h.service.Refresh(value)
+	if err != nil {
+		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_TOKEN", "message": "refresh token is invalid"}})
+		return
+	}
+	c.JSON(200, gin.H{"token": token, "expires_at": time.Now().Add(24 * time.Hour)})
+}
+func (h *AuthHandler) Logout(c *gin.Context) { c.Status(204) }

@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { api, ApiRequestError } from "../services/api";
 import { useToast } from "../components/Toast";
-import type { HoldingDetailSummary, Entry, PaginatedResponse, LivestockType } from "../types";
+import type { Holding, HoldingDetailSummary, Entry, PaginatedResponse, LivestockType } from "../types";
 
 const PAGE_SIZE = 20;
 
@@ -45,10 +45,12 @@ export default function HoldingDetail() {
     setLoading(true);
     setError(null);
     try {
-      const [detail, entryRes] = await Promise.all([
-        api.get<HoldingDetailSummary>(`/holdings/${holdingId}`),
+      const [holdingsRes, entryRes] = await Promise.all([
+        api.get<PaginatedResponse<Holding>>("/holdings"),
         api.get<PaginatedResponse<Entry>>(`/holdings/${holdingId}/entries?page=1&page_size=${PAGE_SIZE}`),
       ]);
+      const detail = holdingsRes.data.find((item) => item.holding_id === holdingId);
+      if (!detail) throw new Error("Holding not found");
       setHolding(detail);
       setCountInput(String(detail.count));
       setEntries(entryRes.data);

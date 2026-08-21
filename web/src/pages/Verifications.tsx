@@ -1,198 +1,164 @@
-import { useEffect, useState } from "react";
-import { api, ApiRequestError } from "../services/api";
-import { useToast } from "../components/Toast";
-import type {
-  PendingVerification,
-  ReciprocityStatus,
-  SubmitVerificationRequest,
-  SubmitVerificationResponse,
-  LivestockType,
-  PaginatedResponse,
-} from "../types";
-
-const TYPE_LABELS: Record<LivestockType, string> = {
-  poultry: "Poultry",
-  dairy: "Dairy",
-  goats: "Goats",
-  other: "Other",
-};
-
-const PAGE_SIZE = 20;
+// src/pages/Verifications.tsx  (rewritten to MVP UX)
+import { useState } from 'react';
+import { Check, CircleAlert, Flag, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
+import { api, ApiRequestError } from '../services/api';
+import { useApp } from '../contexts/AppContext';
+import { PageTitle } from '../components/ProductPrimitives';
+import type { PendingVerification, SubmitVerificationResponse } from '../types';
 
 export default function Verifications() {
-  const { showToast } = useToast();
-  const [pending, setPending] = useState<PendingVerification[]>([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [reciprocity, setReciprocity] = useState<ReciprocityStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { verifications, loading, refresh } = useApp();
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [done, setDone] = useState<Record<string, 'confirm' | 'flag'>>({});
 
-  const [flaggingId, setFlaggingId] = useState<string | null>(null);
-  const [flagNote, setFlagNote] = useState("");
-  const [submittingId, setSubmittingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function load() {
-    setLoading(true);
-    setError(null);
+  async function submit(entry_id: string, verdict: 'confirm' | 'flag') {
+    setSubmitting(entry_id);
     try {
-      const [pendingRes, reciprocityRes] = await Promise.all([
-        api.get<PaginatedResponse<PendingVerification>>(`/verifications/pending?page=1&page_size=${PAGE_SIZE}`),
-        api.get<ReciprocityStatus>("/verifications/reciprocity"),
-      ]);
-      setPending(pendingRes.data);
-      setPage(pendingRes.page);
-      setTotal(pendingRes.total);
-      setReciprocity(reciprocityRes);
+      await api.post<SubmitVerificationResponse>('/verifications', { entry_id, verdict });
+      setDone(d => ({ ...d, [entry_id]: verdict }));
+      refresh();
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : "Couldn't load verifications.");
+      alert(err instanceof ApiRequestError ? err.message : 'Could not submit verification. Try again.');
     } finally {
-      setLoading(false);
+      setSubmitting(null);
     }
   }
 
-  async function loadMore() {
-    setLoadingMore(true);
-    try {
-      const nextPage = page + 1;
-      const res = await api.get<PaginatedResponse<PendingVerification>>(
-        `/verifications/pending?page=${nextPage}&page_size=${PAGE_SIZE}`
-      );
-      setPending((prev) => [...prev, ...res.data]);
-      setPage(res.page);
-      setTotal(res.total);
-    } catch (err) {
-      showToast(err instanceof ApiRequestError ? err.message : "Couldn't load more.", "error");
-    } finally {
-      setLoadingMore(false);
-    }
-  }
-
-  async function submit(entryId: string, verdict: "confirm" | "flag", note?: string) {
-    setSubmittingId(entryId);
-    try {
-      const payload: SubmitVerificationRequest = { entry_id: entryId, verdict, note };
-      await api.post<SubmitVerificationResponse>("/verifications", payload);
-      setPending((prev) => prev.filter((p) => p.entry_id !== entryId));
-      setTotal((prev) => Math.max(0, prev - 1));
-      setFlaggingId(null);
-      setFlagNote("");
-      showToast(verdict === "confirm" ? "Verification submitted" : "Entry flagged for review");
-      // Reciprocity counts change after any submission — refresh it.
-      const r = await api.get<ReciprocityStatus>("/verifications/reciprocity");
-      setReciprocity(r);
-    } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : "Couldn't submit your verification.");
-    } finally {
-      setSubmittingId(null);
-    }
-  }
+  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading…</div>;
 
   return (
-    <div className="page">
-      <h1>Verify peer entries</h1>
-      <p className="muted">
-        Confirming a neighbor's entry helps their score go live — and yours needs the same from others.
-      </p>
-
-      {reciprocity && (
-        <div className={`card reciprocity-banner ${reciprocity.score_active ? "" : "reciprocity-warning"}`}>
-          <p>
-            <strong>{reciprocity.given}</strong> verifications given · <strong>{reciprocity.owed}</strong> owed
-          </p>
-          {!reciprocity.score_active && (
-            <p className="muted">Your own score won't be shareable externally until you're caught up.</p>
-          )}
-        </div>
-      )}
-
-      {loading && <p className="loading">Loading pending verifications…</p>}
-
-      {error && !loading && (
-        <div className="error-banner">
-          {error}{" "}
-          <button className="btn-link" onClick={load}>
-            Retry
+    <>
+      <PageTitle
+        eyebrow="Verification centre"
+        title="Peer review makes self-reported data more useful."
+        description="Cooperative members confirm whether a farm log looks plausible based on their knowledge of that farm. It is tamper-resistant social accountability — not a replacement for KYC."
+        actions={
+          <button className="ws-btn ws-btn-outline" onClick={refresh}>
+            <RefreshCw size={14} /> Refresh
           </button>
+        }
+      />
+
+      {verifications.length === 0 && (
+        <div className="card-surface" style={{ padding: 40, textAlign: 'center' }}>
+          <ShieldCheck size={40} style={{ color: 'var(--color-primary)', margin: '0 auto 16px' }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700 }}>No pending verifications</h3>
+          <p style={{ marginTop: 8, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+            You're all caught up. New requests will appear here when cooperative members submit entries.
+          </p>
         </div>
       )}
 
-      {!loading && !error && pending.length === 0 && (
-        <div className="empty-state">
-          <p>Nothing waiting on you right now.</p>
-        </div>
-      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {verifications.map((v: PendingVerification) => {
+          const verdict = done[v.entry_id];
 
-      {!loading && !error && pending.length > 0 && (
-        <ul className="verification-list">
-          {pending.map((v) => (
-            <li key={v.entry_id} className="card verification-card">
-              <div className="verification-header">
-                <span className="badge">{TYPE_LABELS[v.holding_type]}</span>
-                <span className="muted">{v.farmer_name}</span>
-              </div>
-              <p>
-                Period ending {v.period_end} · {v.estimated_co2e_kg.toFixed(1)} kg CO2e
-              </p>
-              <p className="muted">
-                {v.verifications_so_far} of {v.verifications_required} confirmations so far
-              </p>
-
-              {flaggingId === v.entry_id ? (
-                <div className="inline-form">
-                  <textarea
-                    placeholder="What looks off?"
-                    value={flagNote}
-                    onChange={(e) => setFlagNote(e.target.value)}
-                  />
-                  <div className="button-row">
-                    <button
-                      className="btn btn-danger"
-                      disabled={submittingId === v.entry_id || !flagNote.trim()}
-                      onClick={() => submit(v.entry_id, "flag", flagNote.trim())}
-                    >
-                      Submit flag
-                    </button>
-                    <button
-                      className="btn-link"
-                      onClick={() => {
-                        setFlaggingId(null);
-                        setFlagNote("");
-                      }}
-                    >
-                      Cancel
-                    </button>
+          return (
+            <article key={v.entry_id} style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 20 }}>
+              {/* Main card */}
+              <div className="card-surface" style={{ overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid rgba(156,175,136,0.2)', background: 'var(--color-background)', padding: '20px 24px' }}>
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Verification request</p>
+                    <h2 style={{ marginTop: 4, fontSize: 20, fontWeight: 700, letterSpacing: '-0.035em' }}>Peer farm entry</h2>
+                    <p style={{ marginTop: 4, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                      Period ending {new Date(v.period_end).toLocaleDateString('en-GB', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
                   </div>
+                  <span style={{ background: 'rgba(255,140,66,0.12)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 700, color: '#7a4200' }}>
+                    Awaiting your review
+                  </span>
                 </div>
-              ) : (
-                <div className="button-row">
-                  <button
-                    className="btn btn-primary"
-                    disabled={submittingId === v.entry_id}
-                    onClick={() => submit(v.entry_id, "confirm")}
-                  >
-                    {submittingId === v.entry_id ? "Submitting…" : "Confirm"}
-                  </button>
-                  <button className="btn-link btn-danger" onClick={() => setFlaggingId(v.entry_id)}>
-                    Flag
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                <div style={{ padding: '20px 24px' }}>
+                  <p style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--color-text-secondary)' }}>
+                    Does this submission appear plausible based on your knowledge of this farm's operations?
+                  </p>
+                  <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {[
+                      [`${v.estimated_co2e_kg.toFixed(1)} kg`, 'Estimated CO₂e'],
+                      [`${v.feed_kg.toLocaleString()} kg`, `Feed · ${v.feed_type}`],
+                    ].map(([value, label]) => (
+                      <div key={label} style={{ background: 'rgba(156,175,136,0.08)', borderRadius: 12, padding: '12px 14px' }}>
+                        <span style={{ display: 'block', fontSize: 15, fontWeight: 700 }}>{value}</span>
+                        <span style={{ marginTop: 4, display: 'block', fontSize: 12, color: 'var(--color-text-secondary)' }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
 
-      {pending.length > 0 && pending.length < total && (
-        <button className="btn-link" onClick={loadMore} disabled={loadingMore}>
-          {loadingMore ? "Loading…" : `Load more (${pending.length} of ${total})`}
-        </button>
-      )}
-    </div>
+                  {verdict === 'flag' && (
+                    <div style={{ marginTop: 16, background: 'rgba(176,0,32,0.06)', border: '1px solid rgba(176,0,32,0.2)', borderRadius: 12, padding: '12px 14px', fontSize: 13, color: 'var(--color-primary)' }}>
+                      <CircleAlert size={14} style={{ display: 'inline', marginRight: 6 }} />
+                      Flagged for review. A cooperative lead should compare these figures with typical patterns.
+                    </div>
+                  )}
+
+                  {!verdict && (
+                    <div style={{ marginTop: 20, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button
+                        className="ws-btn ws-btn-primary"
+                        disabled={submitting === v.entry_id}
+                        onClick={() => submit(v.entry_id, 'confirm')}
+                      >
+                        <Check size={14} /> {submitting === v.entry_id ? 'Submitting…' : 'Confirm plausibility'}
+                      </button>
+                      <button
+                        className="ws-btn ws-btn-outline"
+                        style={{ color: 'var(--color-primary)', borderColor: 'rgba(176,0,32,0.3)' }}
+                        disabled={submitting === v.entry_id}
+                        onClick={() => submit(v.entry_id, 'flag')}
+                      >
+                        <Flag size={14} /> Flag for review
+                      </button>
+                    </div>
+                  )}
+
+                  {verdict && (
+                    <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: verdict === 'confirm' ? '#3a6e30' : 'var(--color-primary)' }}>
+                      {verdict === 'confirm' ? <Check size={16} /> : <Flag size={16} />}
+                      {verdict === 'confirm' ? 'You confirmed this entry.' : 'You flagged this entry for review.'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sidebar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <article className="card-surface" style={{ padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(156,175,136,0.12)', display: 'grid', placeItems: 'center', color: '#3a6e30' }}>
+                      <UsersRound size={18} />
+                    </span>
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-text-secondary)' }}>Reported inputs</p>
+                      <h2 style={{ fontSize: 15, fontWeight: 700 }}>Review context</h2>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[
+                      [`${v.energy_kwh.toLocaleString()} kWh`, `${v.energy_source} energy`],
+                      [`${v.water_liters.toLocaleString()} L`, 'Water used'],
+                      [v.waste_handling.replace('_', ' '), 'Waste handling'],
+                    ].map(([value, label]) => (
+                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(156,175,136,0.2)', borderRadius: 10, padding: '8px 12px' }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)' }}>{label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700 }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+
+                <article style={{ background: 'rgba(255,140,66,0.08)', border: '1px solid rgba(255,140,66,0.2)', borderRadius: 20, padding: 20 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#7a4200' }}>Reciprocity</p>
+                  <h2 style={{ marginTop: 8, fontSize: 16, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.3 }}>Verification has a cost — and a reason to care.</h2>
+                  <p style={{ marginTop: 8, fontSize: 13, lineHeight: 1.6, color: '#7a4200' }}>
+                    Members who verify peer logs can have their own records verified in return. Attestations contribute to each verifier's standing.
+                  </p>
+                </article>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </>
   );
 }

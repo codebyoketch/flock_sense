@@ -1,7 +1,9 @@
 import { getToken } from "./auth";
 import type { ApiErrorBody } from "../types";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+// Use the Vite proxy by default. Deployments can set VITE_API_BASE_URL to an
+// absolute API URL (for example, https://api.example.com/api/v1).
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "/api/v1").replace(/\/$/, "");
 
 export class ApiRequestError extends Error {
   code: string;

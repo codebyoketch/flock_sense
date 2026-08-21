@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx - WITHOUT useNavigate
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { royalFlockTheme } from '../theme/index';
 import Card from '../components/Card';
 import Button from '../components/Button';

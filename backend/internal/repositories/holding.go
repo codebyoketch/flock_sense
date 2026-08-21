@@ -1,0 +1,18 @@
+package repositories
+
+import (
+	"github.com/flocksense/backend/internal/models"
+	"gorm.io/gorm"
+)
+
+type HoldingRepository struct{ db *gorm.DB }
+
+func NewHoldingRepository(db *gorm.DB) *HoldingRepository { return &HoldingRepository{db: db} }
+
+func (r *HoldingRepository) List(farmerID string) ([]models.Holding, error) {
+	var holdings []models.Holding
+	err := r.db.Where("farmer_id = ? AND deleted_at IS NULL", farmerID).Find(&holdings).Error
+	return holdings, err
+}
+
+func (r *HoldingRepository) Create(holding *models.Holding) error { return r.db.Create(holding).Error }

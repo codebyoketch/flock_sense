@@ -10,17 +10,21 @@ import (
 
 	"github.com/flocksense/backend/internal/blockchain"
 	"github.com/flocksense/backend/internal/emissions"
+	"github.com/flocksense/backend/internal/handlers"
 	"github.com/flocksense/backend/internal/models"
 	"github.com/flocksense/backend/internal/recommendations"
+	"github.com/flocksense/backend/internal/repositories"
+	"github.com/flocksense/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
 type Server struct {
-	DB     *gorm.DB
-	Secret []byte
-	Chain  blockchain.Client
+	DB       *gorm.DB
+	Secret   []byte
+	Chain    blockchain.Client
+	Holdings *handlers.HoldingHandler
 }
 
 type holdingRequest struct {
@@ -49,7 +53,9 @@ func New(database *gorm.DB, secret string) *Server {
 	if secret == "" {
 		secret = "development-secret"
 	}
-	return &Server{database, []byte(secret), blockchain.MockClient{Chain: "mock-vechain"}}
+	holdingRepository := repositories.NewHoldingRepository(database)
+	holdingService := services.NewHoldingService(holdingRepository)
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -62,8 +68,8 @@ func (s *Server) router() *gin.Engine {
 	a.Use(s.auth())
 	a.GET("/farmers/me", s.me)
 	a.PATCH("/farmers/me", s.updateMe)
-	a.GET("/holdings", s.listHoldings)
-	a.POST("/holdings", s.createHolding)
+	a.GET("/holdings", s.Holdings.List)
+	a.POST("/holdings", s.Holdings.Create)
 	a.PATCH("/holdings/:id", s.updateHolding)
 	a.DELETE("/holdings/:id", s.deleteHolding)
 	a.POST("/entries", s.createEntry)

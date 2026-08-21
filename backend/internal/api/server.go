@@ -32,6 +32,7 @@ type Server struct {
 	Benchmarks   *handlers.BenchmarkHandler
 	Verification *handlers.VerificationHandler
 	Auth         *handlers.AuthHandler
+	AdminAuth    *handlers.AdminAuthHandler
 	Entries      *handlers.EntryHandler
 	Scores       *handlers.ScoreHandler
 	Farmer       *handlers.FarmerHandler
@@ -75,12 +76,14 @@ func New(database *gorm.DB, secret string) *Server {
 	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	farmerService := services.NewFarmerService(farmerRepository)
+	adminRepository := repositories.NewAdminRepository(database)
+	adminAuthService := services.NewAdminAuthService(adminRepository, []byte(secret))
 	entryService := services.NewEntryService(holdingRepository, entryRepository)
 	scoreRepository := repositories.NewScoreRepository(database)
 	ledgerRepository := repositories.NewLedgerRepository(database)
 	ledgerService := services.NewLedgerService(ledgerRepository, blockchain.MockClient{Chain: "mock-vechain"})
 	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService)}
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -89,6 +92,7 @@ func (s *Server) router() *gin.Engine {
 	v := r.Group("/api/v1")
 	v.POST("/auth/register", s.Auth.Register)
 	v.POST("/auth/login", s.Auth.Login)
+	v.POST("/auth/admin/login", s.AdminAuth.Login)
 	a := v.Group("/")
 	a.Use(middleware.Auth(s.Secret))
 	a.GET("/farmers/me", s.Farmer.Me)

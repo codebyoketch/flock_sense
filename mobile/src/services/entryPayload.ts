@@ -2,11 +2,9 @@ import type { Entry } from "@/types";
 
 /**
  * Strips local-only bookkeeping fields (status, timestamps, server entryId)
- * before sending, and flattens the nested feed/energy/water groups into the
- * flat field names the backend's entries table actually expects
- * (feed_type, feed_kg, energy_source, energy_kwh, water_liters).
- * api.ts handles the remaining camelCase → snake_case key conversion at the
- * wire boundary.
+ * before sending — the API contract only wants the reported data plus the
+ * client-generated id used for offline idempotency. api.ts handles the
+ * camelCase → snake_case conversion at the wire boundary.
  */
 export function toEntryPayload(entry: Entry) {
   return {
@@ -14,11 +12,9 @@ export function toEntryPayload(entry: Entry) {
     holdingId: entry.holdingId,
     periodStart: entry.periodStart,
     periodEnd: entry.periodEnd,
-    feedType: entry.feed.type,
-    feedKg: entry.feed.quantityKg,
-    energySource: entry.energy.source,
-    energyKwh: entry.energy.quantityKwh,
-    waterLiters: entry.water.quantityLiters,
+    feed: entry.feed,
+    energy: entry.energy,
+    water: entry.water,
     wasteHandling: entry.wasteHandling,
   };
 }

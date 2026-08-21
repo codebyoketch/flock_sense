@@ -74,7 +74,7 @@ export default function Home() {
                 <View style={{ marginLeft: 16, flex: 1 }}>
                   <Text style={styles.scoreLabel}>Overall sustainability score</Text>
                   <Text style={styles.holdingSummary}>
-                    {(score.holdings ?? []).map((h) => `${h.type[0].toUpperCase()}${h.type.slice(1)}: ${h.score}`).join(" · ")}
+                    {score.holdings.map((h) => `${h.type[0].toUpperCase()}${h.type.slice(1)}: ${h.score}`).join(" · ")}
                   </Text>
                 </View>
               </>

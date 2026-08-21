@@ -1,17 +1,14 @@
 import * as SQLite from "expo-sqlite";
 
 // Single shared connection. expo-sqlite (v14+) uses the async API.
-let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+let dbInstance: SQLite.SQLiteDatabase | null = null;
 
-export function getDb(): Promise<SQLite.SQLiteDatabase> {
-  if (!dbPromise) {
-    dbPromise = (async () => {
-      const db = await SQLite.openDatabaseAsync("flocksense.db");
-      await migrate(db);
-      return db;
-    })();
+export async function getDb(): Promise<SQLite.SQLiteDatabase> {
+  if (!dbInstance) {
+    dbInstance = await SQLite.openDatabaseAsync("flocksense.db");
+    await migrate(dbInstance);
   }
-  return dbPromise;
+  return dbInstance;
 }
 
 async function migrate(db: SQLite.SQLiteDatabase) {

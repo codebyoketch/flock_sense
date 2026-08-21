@@ -3,18 +3,10 @@ import { resetLocalDb } from "@/storage/db";
 import type { Farmer } from "@/types";
 
 interface RegisterPayload {
+  phone: string;
   name: string;
-  phone: string;
-  email?: string;
-  password: string;
-  farmName?: string;
-  animalType: string;
-  herdSize: number;
-}
-
-interface LoginPayload {
-  phone: string;
-  password: string;
+  cooperativeId: string;
+  location?: { lat: number; lng: number; label: string };
 }
 
 interface AuthResult {
@@ -33,10 +25,14 @@ export async function register(payload: RegisterPayload): Promise<AuthResult> {
   return result;
 }
 
-export async function login(payload: LoginPayload): Promise<AuthResult> {
+export async function requestOtp(phone: string): Promise<{ otpSent: boolean; expiresInSeconds: number }> {
+  return apiRequest("/auth/login", { method: "POST", body: { phone }, auth: false });
+}
+
+export async function verifyOtp(phone: string, otp: string): Promise<AuthResult> {
   const result = await apiRequest<AuthResult>("/auth/login", {
     method: "POST",
-    body: payload,
+    body: { phone, otp },
     auth: false,
   });
   await setToken(result.token);

@@ -14,3 +14,10 @@ func (r *FarmerRepository) FindByID(id string) (models.Farmer, error) {
 	err := r.db.First(&farmer, "id = ?", id).Error
 	return farmer, err
 }
+
+func (r *FarmerRepository) Create(farmer *models.Farmer) error { return r.db.Create(farmer).Error }
+func (r *FarmerRepository) FindByPhone(phone string) (models.Farmer, error) {
+	var farmer models.Farmer
+	err := r.db.Where("phone = ?", phone).First(&farmer).Error
+	return farmer, err
+}

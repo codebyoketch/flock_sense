@@ -31,6 +31,7 @@ type Server struct {
 	Reports      *handlers.ReportHandler
 	Benchmarks   *handlers.BenchmarkHandler
 	Verification *handlers.VerificationHandler
+	Auth         *handlers.AuthHandler
 }
 
 type holdingRequest struct {
@@ -69,15 +70,16 @@ func New(database *gorm.DB, secret string) *Server {
 	benchmarkService := services.NewBenchmarkService(holdingRepository, entryRepository)
 	verificationRepository := repositories.NewVerificationRepository(database)
 	verificationService := services.NewVerificationService(verificationRepository)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService)}
+	authService := services.NewAuthService(farmerRepository, []byte(secret))
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 	v := r.Group("/api/v1")
-	v.POST("/auth/register", s.register)
-	v.POST("/auth/login", s.login)
+	v.POST("/auth/register", s.Auth.Register)
+	v.POST("/auth/login", s.Auth.Login)
 	a := v.Group("/")
 	a.Use(middleware.Auth(s.Secret))
 	a.GET("/farmers/me", s.me)

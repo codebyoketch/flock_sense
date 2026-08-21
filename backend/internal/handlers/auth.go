@@ -1,0 +1,45 @@
+package handlers
+
+import (
+	"github.com/flocksense/backend/internal/services"
+	"github.com/gin-gonic/gin"
+	"time"
+)
+
+type AuthHandler struct{ service *services.AuthService }
+
+func NewAuthHandler(service *services.AuthService) *AuthHandler {
+	return &AuthHandler{service: service}
+}
+func (h *AuthHandler) Register(c *gin.Context) {
+	var input struct {
+		Name          string `json:"name"`
+		Phone         string `json:"phone"`
+		CooperativeID string `json:"cooperative_id"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.Name == "" || input.Phone == "" {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "name and phone are required"}})
+		return
+	}
+	farmer, token, err := h.service.Register(input.Name, input.Phone, input.CooperativeID)
+	if err != nil {
+		c.JSON(409, gin.H{"error": gin.H{"code": "PHONE_EXISTS", "message": "phone already registered"}})
+		return
+	}
+	c.JSON(201, gin.H{"farmer_id": farmer.ID, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
+}
+func (h *AuthHandler) Login(c *gin.Context) {
+	var input struct {
+		Phone string `json:"phone"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.Phone == "" {
+		c.Status(400)
+		return
+	}
+	farmer, token, err := h.service.Login(input.Phone)
+	if err != nil {
+		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_LOGIN", "message": "farmer not found"}})
+		return
+	}
+	c.JSON(200, gin.H{"farmer_id": farmer.ID, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
+}

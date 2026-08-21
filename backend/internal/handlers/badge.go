@@ -11,7 +11,7 @@ func NewBadgeHandler(service *services.BadgeService) *BadgeHandler {
 	return &BadgeHandler{service: service}
 }
 func (h *BadgeHandler) Public(c *gin.Context) {
-	farmer, anchor, err := h.service.ForFarmer(c.Param("id"))
+	farmer, anchor, err := h.service.ForFarmer(c.Param("farmer_id"))
 	if err != nil {
 		c.JSON(404, gin.H{"error": gin.H{"code": "SCORE_NOT_YET_SHAREABLE", "message": "score is not yet shareable"}})
 		return

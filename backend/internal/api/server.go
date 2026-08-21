@@ -27,6 +27,7 @@ type Server struct {
 	Holdings     *handlers.HoldingHandler
 	Calculations *handlers.CalculationHandler
 	Footprint    *handlers.FootprintHandler
+	Reports      *handlers.ReportHandler
 }
 
 type holdingRequest struct {

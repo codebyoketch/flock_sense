@@ -37,7 +37,25 @@ func TestAuthRejectsUnexpectedAlgorithm(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{"farmer_id": "farmer-1"})
 	value, _ := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
 	r := gin.New()
-	r.Use(Auth(secret))
+	r.Use(Auth(secret, nil))
+	r.GET("/", func(c *gin.Context) { c.Status(http.StatusOK) })
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "Bearer "+value)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected unauthorized, got %d", res.Code)
+	}
+}
+
+func TestAuthRejectsRevokedToken(t *testing.T) {
+	secret := []byte("test-secret")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"farmer_id": "farmer-1"})
+	value, _ := token.SignedString(secret)
+	revocations := NewRevocations()
+	revocations.Revoke(value)
+	r := gin.New()
+	r.Use(Auth(secret, revocations))
 	r.GET("/", func(c *gin.Context) { c.Status(http.StatusOK) })
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+value)

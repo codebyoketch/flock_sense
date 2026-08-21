@@ -53,3 +53,12 @@ func (h *EntryHandler) Get(c *gin.Context) {
 	}
 	c.JSON(200, entry)
 }
+
+func (h *EntryHandler) List(c *gin.Context) {
+	entries, err := h.service.ListByFarmerStatus(c.GetString("farmer_id"), c.Query("status"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": gin.H{"code": "DATABASE_ERROR", "message": "could not load entries"}})
+		return
+	}
+	c.JSON(200, gin.H{"data": entries, "page": 1, "page_size": len(entries), "total": len(entries)})
+}

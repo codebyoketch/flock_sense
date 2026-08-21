@@ -1,24 +1,30 @@
 package services
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/flocksense/backend/internal/models"
 	"github.com/flocksense/backend/internal/recommendations"
 	"time"
 )
 
 type ScoreStore interface{ Save(*models.Score) error }
+type VerificationHistory interface {
+	ListByEntry(entryID string) ([]models.Verification, error)
+}
 type ScoreResult struct {
 	Score          models.Score
 	Recommendation recommendations.Recommendation
 }
 type ScoreService struct {
-	entries EntryStore
-	scores  ScoreStore
-	ledger  *LedgerService
+	entries       EntryStore
+	scores        ScoreStore
+	ledger        *LedgerService
+	verifications VerificationHistory
 }
 
-func NewScoreService(entries EntryStore, scores ScoreStore, ledger *LedgerService) *ScoreService {
-	return &ScoreService{entries: entries, scores: scores, ledger: ledger}
+func NewScoreService(entries EntryStore, scores ScoreStore, ledger *LedgerService, verifications VerificationHistory) *ScoreService {
+	return &ScoreService{entries: entries, scores: scores, ledger: ledger, verifications: verifications}
 }
 func (s *ScoreService) ForFarmer(farmerID string) (ScoreResult, error) {
 	entries, err := s.entries.ListByFarmer(farmerID)
@@ -49,9 +55,27 @@ func (s *ScoreService) ForFarmer(farmerID string) (ScoreResult, error) {
 		return ScoreResult{}, err
 	}
 	if score.ScoreActive {
-		if err := s.ledger.AnchorScore(farmerID, grade, total); err != nil {
+		trail := make([]map[string]any, 0)
+		for _, entry := range entries {
+			if entry.Status != "verified" {
+				continue
+			}
+			attestations, err := s.verifications.ListByEntry(entry.ID)
+			if err != nil {
+				return ScoreResult{}, err
+			}
+			for _, attestation := range attestations {
+				trail = append(trail, map[string]any{"verifier_id_hash": hashIdentity(attestation.VerifierID), "entry_id": entry.ID, "verdict": attestation.Verdict, "timestamp": attestation.CreatedAt})
+			}
+		}
+		if err := s.ledger.AnchorScore(farmerID, grade, total, trail); err != nil {
 			return ScoreResult{}, err
 		}
 	}
 	return ScoreResult{Score: score, Recommendation: recommendations.For("feed", total)}, nil
+}
+
+func hashIdentity(value string) string {
+	digest := sha256.Sum256([]byte(value))
+	return "sha256:" + hex.EncodeToString(digest[:])
 }

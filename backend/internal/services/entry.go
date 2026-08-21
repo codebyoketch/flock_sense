@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"github.com/flocksense/backend/internal/emissions"
 	"github.com/flocksense/backend/internal/models"
 	"time"
@@ -13,6 +14,8 @@ type EntryWriter interface {
 	FindByClientID(clientID string) (models.Entry, error)
 	Create(*models.Entry) error
 	ListByHolding(holdingID string) ([]models.Entry, error)
+	FindByID(id string) (models.Entry, error)
+	ListByFarmerStatus(farmerID, status string) ([]models.Entry, error)
 }
 type EntryInput struct {
 	ClientID      string  `json:"client_id"`
@@ -81,12 +84,14 @@ func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
 	return results
 }
 
+func (s *EntryService) ListByFarmerStatus(farmerID, status string) ([]models.Entry, error) {
+	return s.entries.ListByFarmerStatus(farmerID, status)
+}
+
 func (s *EntryService) Get(farmerID, entryID string) (models.Entry, error) {
-	entry, err := s.entries.(interface {
-		FindByID(string) (models.Entry, error)
-	}).FindByID(entryID)
+	entry, err := s.entries.FindByID(entryID)
 	if err != nil || entry.FarmerID != farmerID {
-		return models.Entry{}, gorm.ErrRecordNotFound
+		return models.Entry{}, errors.New("entry not found")
 	}
 	return entry, nil
 }

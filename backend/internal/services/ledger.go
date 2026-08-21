@@ -22,18 +22,18 @@ type LedgerService struct {
 func NewLedgerService(store LedgerStore, client blockchain.Client) *LedgerService {
 	return &LedgerService{store: store, client: client}
 }
-func (s *LedgerService) AnchorScore(farmerID, grade string, total float64) error {
+func (s *LedgerService) AnchorScore(farmerID, grade string, total float64, trail []map[string]any) error {
 	if _, err := s.store.FindByFarmer(farmerID); err == nil {
 		return nil
 	}
 	digest := sha256.Sum256([]byte(fmt.Sprintf("%s:%s:%.4f", farmerID, grade, total)))
 	scoreHash := "sha256:" + hex.EncodeToString(digest[:])
-	anchor, err := s.client.AnchorScore(scoreHash, []map[string]any{})
+	anchor, err := s.client.AnchorScore(scoreHash, trail)
 	if err != nil {
 		return err
 	}
-	trail, _ := json.Marshal(anchor.AttestationTrail)
-	return s.store.Create(&models.LedgerAnchor{FarmerID: farmerID, TxID: anchor.TxID, ScoreHash: anchor.ScoreHash, Chain: anchor.Chain, AttestationTrail: string(trail), AnchoredAt: anchor.AnchoredAt})
+	encodedTrail, _ := json.Marshal(trail)
+	return s.store.Create(&models.LedgerAnchor{FarmerID: farmerID, TxID: anchor.TxID, ScoreHash: anchor.ScoreHash, Chain: anchor.Chain, AttestationTrail: string(encodedTrail), AnchoredAt: anchor.AnchoredAt})
 }
 
 func (s *LedgerService) Proof(txID string) (models.LedgerAnchor, error) {

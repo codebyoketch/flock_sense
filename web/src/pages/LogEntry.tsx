@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { api, ApiRequestError } from '../services/api';
+import { queueEntry } from '../services/offlineEntries';
 import type { Holding, EnergySource, WasteHandling, CreateEntryRequest, CreateEntryResponse, PaginatedResponse } from '../types';
 import { PageTitle } from '../components/ProductPrimitives';
 
@@ -74,6 +75,7 @@ export default function LogEntry() {
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [result,     setResult]     = useState<CreateEntryResponse | null>(null);
+  const [offlineQueued, setOfflineQueued] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -119,13 +121,28 @@ export default function LogEntry() {
       water_liters:   waterLiters,
       waste_handling: wasteHandling,
     };
+    if (!navigator.onLine) {
+      if (!queueEntry(payload)) {
+        setError('Your device could not save this entry for later sync. Please try again.');
+        return;
+      }
+      setOfflineQueued(true);
+      setStep('done');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await api.post<CreateEntryResponse>('/entries', payload);
       setResult(res);
       setStep('done');
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Could not submit. Try again.');
+      if (!(err instanceof ApiRequestError) && queueEntry(payload)) {
+        setOfflineQueued(true);
+        setStep('done');
+      } else {
+        setError(err instanceof ApiRequestError ? err.message : 'Could not submit. Try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -166,20 +183,21 @@ export default function LogEntry() {
   }
 
   /* ── Done screen ── */
-  if (step === 'done' && result) {
+  if (step === 'done' && (result || offlineQueued)) {
     return (
       <>
-        <PageTitle eyebrow="Footprint calculator" title="Entry logged." />
+        <PageTitle eyebrow="Footprint calculator" title={offlineQueued ? "Entry saved offline." : "Entry logged."} />
         <div className="card-surface" style={{ padding: 40, textAlign: 'center', maxWidth: 480, margin: '0 auto' }}>
           <CheckCircle2 size={56} style={{ color: '#3a6e30', margin: '0 auto 20px' }} />
-          <h2 style={{ fontSize: 22, fontWeight: 700 }}>Entry submitted successfully!</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700 }}>{offlineQueued ? 'Your entry is safe on this device.' : 'Entry submitted successfully!'}</h2>
           <p style={{ marginTop: 10, fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>
-            Estimated footprint: <strong>{result.estimated_co2e_kg.toFixed(1)} kg CO₂e</strong>
-            <br />Status: pending peer verification.
+            {offlineQueued
+              ? 'It will sync automatically when your connection returns, then move to peer verification.'
+              : <><strong>Estimated footprint: {result!.estimated_co2e_kg.toFixed(1)} kg CO₂e</strong><br />Status: pending peer verification.</>}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 28 }}>
             <button className="ws-btn ws-btn-primary" onClick={() => navigate('/dashboard')}>View dashboard</button>
-            <button className="ws-btn ws-btn-outline" onClick={() => navigate(`/holding/${result.holding_id}`)}>View holding</button>
+            <button className="ws-btn ws-btn-outline" onClick={() => navigate(`/holding/${result?.holding_id ?? holdingId}`)}>View holding</button>
           </div>
         </div>
       </>

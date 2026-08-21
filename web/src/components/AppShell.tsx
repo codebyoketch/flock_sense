@@ -1,6 +1,6 @@
 // src/components/AppShell.tsx
 // Sidebar layout shell with sticky topbar and mobile bottom dock.
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Bell, BookOpenCheck, Compass, FileText,
@@ -10,6 +10,7 @@ import {
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
 import { clearToken } from '../services/auth';
+import { pendingEntryCount, syncQueuedEntries } from '../services/offlineEntries';
 import '../theme/shell.css';
 import '../theme/primitives.css';
 
@@ -28,10 +29,22 @@ const navigation = [
 export default function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { verifications, farmer } = useApp();
+  const { verifications, farmer, refresh } = useApp();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [queuedEntries, setQueuedEntries] = useState(pendingEntryCount);
 
   const pendingCount = verifications.length;
+
+  useEffect(() => {
+    async function sync() {
+      const { synced, remaining } = await syncQueuedEntries();
+      setQueuedEntries(remaining);
+      if (synced > 0) refresh();
+    }
+    void sync();
+    window.addEventListener('online', sync);
+    return () => window.removeEventListener('online', sync);
+  }, [refresh]);
 
   async function handleSignOut() {
     try {
@@ -85,7 +98,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
             {farmer?.cooperative_name ?? 'Cooperative'}
           </div>
           <p className="shell-sync-sub">
-            {farmer?.name ? `Signed in as ${farmer.name}` : 'Loading…'}
+            {queuedEntries > 0
+              ? `${queuedEntries} ${queuedEntries === 1 ? 'entry is' : 'entries are'} saved offline`
+              : farmer?.name ? `Signed in as ${farmer.name} · All changes synced` : 'Loading…'}
           </p>
           <button
             onClick={handleSignOut}

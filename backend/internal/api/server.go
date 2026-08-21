@@ -27,6 +27,10 @@ type holdingRequest struct {
 	Count int    `json:"count"`
 }
 
+type syncEntriesRequest struct {
+	Entries []entryRequest `json:"entries"`
+}
+
 type entryRequest struct {
 	ClientID      string  `json:"client_id"`
 	HoldingID     string  `json:"holding_id"`
@@ -206,12 +210,7 @@ func (s *Server) createEntry(c *gin.Context) {
 	c.JSON(201, e)
 }
 func (s *Server) syncEntries(c *gin.Context) {
-	var in struct {
-		Entries []struct {
-			ClientID, HoldingID, PeriodStart, PeriodEnd, FeedType, EnergySource, WasteHandling string
-			FeedKg, EnergyKwh, WaterLiters                                                     float64
-		}
-	}
+	var in syncEntriesRequest
 	c.ShouldBindJSON(&in)
 	results := []gin.H{}
 	for _, x := range in.Entries {

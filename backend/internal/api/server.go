@@ -278,10 +278,7 @@ func (s *Server) score(c *gin.Context) {
 }
 
 func (s *Server) calculate(c *gin.Context) {
-	var in struct {
-		HoldingType, EnergySource, WasteHandling string
-		FeedKg, EnergyKwh, WaterLiters           float64
-	}
+	var in emissions.Request
 	if c.ShouldBindJSON(&in) != nil || !validType(in.HoldingType) {
 		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "valid holding type and measurements are required"}})
 		return

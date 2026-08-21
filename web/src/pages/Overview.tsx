@@ -24,7 +24,7 @@ export default function Overview() {
       <>
         <PageTitle
           eyebrow="Farm overview"
-          title={`Good morning, ${farmerName}.`}
+          title={`Welcome, ${farmerName}.`}
           description="Start by adding a holding and logging your first farm entry."
           actions={
             <Link to="/holdings" className="ws-btn ws-btn-primary">
@@ -59,7 +59,7 @@ export default function Overview() {
     <>
       <PageTitle
         eyebrow="Farm overview"
-        title={`Good morning, ${farmerName}.`}
+        title={`Welcome, ${farmerName}.`}
         description="Here is your latest sustainability picture — measured, explained, and ready for your cooperative."
         actions={
           <Link to="/calculator" className="ws-btn ws-btn-primary">

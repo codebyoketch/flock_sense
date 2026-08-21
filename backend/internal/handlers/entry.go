@@ -23,3 +23,15 @@ func (h *EntryHandler) Create(c *gin.Context) {
 	}
 	c.JSON(201, entry)
 }
+
+func (h *EntryHandler) Sync(c *gin.Context) {
+	var input struct {
+		Entries []services.EntryInput `json:"entries"`
+	}
+	if c.ShouldBindJSON(&input) != nil {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "entries are required"}})
+		return
+	}
+	results := h.service.Sync(c.GetString("farmer_id"), input.Entries)
+	c.JSON(200, gin.H{"results": results})
+}

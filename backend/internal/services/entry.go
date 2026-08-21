@@ -30,6 +30,13 @@ type EntryService struct {
 	entries  EntryWriter
 }
 
+type SyncResult struct {
+	ClientID string
+	Status   string
+	EntryID  string
+	Reason   string
+}
+
 func NewEntryService(holdings OwnedHoldingStore, entries EntryWriter) *EntryService {
 	return &EntryService{holdings: holdings, entries: entries}
 }
@@ -54,4 +61,21 @@ func (s *EntryService) Create(farmerID string, input EntryInput) (models.Entry, 
 		return models.Entry{}, false, err
 	}
 	return entry, false, nil
+}
+
+func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
+	results := make([]SyncResult, 0, len(inputs))
+	for _, input := range inputs {
+		entry, duplicate, err := s.Create(farmerID, input)
+		if err != nil {
+			results = append(results, SyncResult{ClientID: input.ClientID, Status: "rejected", Reason: "invalid_entry"})
+			continue
+		}
+		status := "created"
+		if duplicate {
+			status = "duplicate"
+		}
+		results = append(results, SyncResult{ClientID: input.ClientID, Status: status, EntryID: entry.ID})
+	}
+	return results
 }

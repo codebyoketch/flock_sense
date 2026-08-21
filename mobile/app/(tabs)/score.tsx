@@ -72,7 +72,7 @@ export default function Score() {
       )}
 
       <Text style={styles.sectionTitle}>By holding</Text>
-      {score.holdings.map((h) => (
+      {(score.holdings ?? []).map((h) => (
         <View key={h.holdingId} style={styles.holdingCard}>
           <View style={styles.holdingHeader}>
             <ScoreBadge grade={h.score} size="small" />

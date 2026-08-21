@@ -31,28 +31,6 @@ type Server struct {
 	Revocations  *middleware.Revocations
 }
 
-type holdingRequest struct {
-	Type  string `json:"type"`
-	Count int    `json:"count"`
-}
-
-type syncEntriesRequest struct {
-	Entries []entryRequest `json:"entries"`
-}
-
-type entryRequest struct {
-	ClientID      string  `json:"client_id"`
-	HoldingID     string  `json:"holding_id"`
-	PeriodStart   string  `json:"period_start"`
-	PeriodEnd     string  `json:"period_end"`
-	FeedType      string  `json:"feed_type"`
-	FeedKg        float64 `json:"feed_kg"`
-	EnergySource  string  `json:"energy_source"`
-	EnergyKwh     float64 `json:"energy_kwh"`
-	WaterLiters   float64 `json:"water_liters"`
-	WasteHandling string  `json:"waste_handling"`
-}
-
 func New(database *gorm.DB, secret string) *Server {
 	if secret == "" {
 		secret = "development-secret"

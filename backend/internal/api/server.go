@@ -36,6 +36,7 @@ type Server struct {
 	Entries      *handlers.EntryHandler
 	Scores       *handlers.ScoreHandler
 	Farmer       *handlers.FarmerHandler
+	Cooperative  *handlers.CooperativeHandler
 }
 
 type holdingRequest struct {
@@ -76,6 +77,8 @@ func New(database *gorm.DB, secret string) *Server {
 	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	farmerService := services.NewFarmerService(farmerRepository)
+	cooperativeRepository := repositories.NewCooperativeRepository(database)
+	cooperativeService := services.NewCooperativeService(cooperativeRepository)
 	adminRepository := repositories.NewAdminRepository(database)
 	adminAuthService := services.NewAdminAuthService(adminRepository, []byte(secret))
 	entryService := services.NewEntryService(holdingRepository, entryRepository)
@@ -83,7 +86,7 @@ func New(database *gorm.DB, secret string) *Server {
 	ledgerRepository := repositories.NewLedgerRepository(database)
 	ledgerService := services.NewLedgerService(ledgerRepository, blockchain.MockClient{Chain: "mock-vechain"})
 	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService)}
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -96,6 +99,10 @@ func (s *Server) router() *gin.Engine {
 	a := v.Group("/")
 	a.Use(middleware.Auth(s.Secret))
 	a.Use(middleware.RequireRole("farmer"))
+	admin := v.Group("/")
+	admin.Use(middleware.Auth(s.Secret))
+	admin.Use(middleware.RequireRole("cooperative_admin"))
+	admin.GET("/cooperatives/:id/scores", s.Cooperative.Scores)
 	a.GET("/farmers/me", s.Farmer.Me)
 	a.PATCH("/farmers/me", s.Farmer.Update)
 	a.GET("/holdings", s.Holdings.List)

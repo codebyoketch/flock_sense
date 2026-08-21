@@ -16,3 +16,9 @@ func (r *LedgerRepository) FindByFarmer(farmerID string) (models.LedgerAnchor, e
 func (r *LedgerRepository) Create(anchor *models.LedgerAnchor) error {
 	return r.db.Create(anchor).Error
 }
+
+func (r *LedgerRepository) FindByTxID(txID string) (models.LedgerAnchor, error) {
+	var anchor models.LedgerAnchor
+	err := r.db.Where("tx_id = ?", txID).First(&anchor).Error
+	return anchor, err
+}

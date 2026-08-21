@@ -34,3 +34,7 @@ func (s *LedgerService) AnchorScore(farmerID, grade string, total float64) error
 	trail, _ := json.Marshal(anchor.AttestationTrail)
 	return s.store.Create(&models.LedgerAnchor{FarmerID: farmerID, TxID: anchor.TxID, ScoreHash: anchor.ScoreHash, Chain: anchor.Chain, AttestationTrail: string(trail), AnchoredAt: anchor.AnchoredAt})
 }
+
+func (s *LedgerService) Proof(txID string) (models.LedgerAnchor, error) {
+	return s.store.FindByTxID(txID)
+}

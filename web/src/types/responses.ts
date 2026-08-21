@@ -29,3 +29,11 @@ export interface BadgeResponse {
   chain: string;
   verified_at: string;
 }
+
+export interface LedgerProofResponse {
+  tx_id: string;
+  score_hash: string;
+  chain: string;
+  attestation_trail: string;
+  anchored_at: string;
+}

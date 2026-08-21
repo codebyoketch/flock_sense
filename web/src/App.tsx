@@ -22,6 +22,7 @@ import Cooperative from "./pages/Cooperative";
 import Profile from "./pages/Profile";
 import Holdings from "./pages/Holdings";
 import HoldingDetail from "./pages/HoldingDetail";
+import PublicProof from "./pages/PublicProof";
 
 import "./theme/global.css";
 
@@ -45,6 +46,7 @@ function App() {
         <Route path="/"         element={<Landing />} />
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/proof/:txId" element={<PublicProof />} />
 
         {/* Protected workspace — auth guard + data context + sidebar shell */}
         <Route element={<ProtectedRoute />}>

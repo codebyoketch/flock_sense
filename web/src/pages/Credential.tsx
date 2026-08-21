@@ -1,6 +1,7 @@
 // src/pages/Credential.tsx
 import { useEffect, useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { Copy, ExternalLink, ShieldCheck } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useApp } from '../contexts/AppContext';
 import { api, ApiRequestError } from '../services/api';
 import { PageTitle, ScoreDial, ProofChip } from '../components/ProductPrimitives';
@@ -45,6 +46,7 @@ export default function Credential() {
   }
 
   const period = new Date(badge.verified_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  const proofUrl = `${window.location.origin}/proof/${badge.ledger_tx_id}`;
 
   return (
     <>
@@ -96,18 +98,23 @@ export default function Credential() {
 
         {/* Share prompt */}
         <div className="card-surface" style={{ marginTop: 24, padding: '30px 32px', borderRadius: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 22, flexWrap: 'wrap' }}>
             <span style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(128,0,32,0.08)', display: 'grid', placeItems: 'center', color: 'var(--color-primary)', flexShrink: 0 }}>
               <ShieldCheck size={23} />
             </span>
             <div>
               <h3 style={{ fontSize: 17, fontWeight: 700 }}>How to share this credential</h3>
               <p style={{ marginTop: 8, fontSize: 14, lineHeight: 1.7, color: 'var(--color-text-secondary)' }}>
-                This credential is backed by the ledger transaction <strong>{badge.ledger_tx_id}</strong>. Share a PDF export or screenshot with your cooperative, SACCO, or buyer.
+                Scan the QR code to open a public proof of the ledger transaction and its peer-attestation trail. Share it with your cooperative, SACCO, buyer, or lender.
               </p>
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <button className="ws-btn ws-btn-primary" onClick={() => window.print()}>Download PDF</button>
+                <button className="ws-btn ws-btn-outline" onClick={() => void navigator.clipboard?.writeText(proofUrl)}><Copy size={14} /> Copy proof link</button>
+                <a className="ws-btn ws-btn-outline" href={proofUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /> Open proof</a>
               </div>
+            </div>
+            <div style={{ padding: 10, borderRadius: 14, background: '#fff', border: '1px solid rgba(156,175,136,0.3)' }}>
+              <QRCodeSVG value={proofUrl} size={118} bgColor="#FFFFFF" fgColor="#2D1B1B" includeMargin />
             </div>
           </div>
         </div>

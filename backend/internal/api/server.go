@@ -11,6 +11,7 @@ import (
 	"github.com/flocksense/backend/internal/blockchain"
 	"github.com/flocksense/backend/internal/emissions"
 	"github.com/flocksense/backend/internal/handlers"
+	"github.com/flocksense/backend/internal/middleware"
 	"github.com/flocksense/backend/internal/models"
 	"github.com/flocksense/backend/internal/recommendations"
 	"github.com/flocksense/backend/internal/repositories"
@@ -78,7 +79,7 @@ func (s *Server) router() *gin.Engine {
 	v.POST("/auth/register", s.register)
 	v.POST("/auth/login", s.login)
 	a := v.Group("/")
-	a.Use(s.auth())
+	a.Use(middleware.Auth(s.Secret))
 	a.GET("/farmers/me", s.me)
 	a.PATCH("/farmers/me", s.updateMe)
 	a.GET("/holdings", s.Holdings.List)

@@ -1,30 +1,50 @@
 // src/pages/Credential.tsx
+import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { calculateFromEntry } from '../lib/engine';
-import { PageTitle, ScoreDial, StatusSeal, ProofChip } from '../components/ProductPrimitives';
+import { api, ApiRequestError } from '../services/api';
+import { PageTitle, ScoreDial, ProofChip } from '../components/ProductPrimitives';
 import { Link } from 'react-router-dom';
+import type { BadgeResponse } from '../types';
+
+const scoreByGrade: Record<string, number> = { A: 95, B: 82, C: 70, D: 58, E: 45 };
 
 export default function Credential() {
-  const { farmer, primaryHolding, latestEntry, loading } = useApp();
+  const { farmer, loading } = useApp();
+  const [badge, setBadge] = useState<BadgeResponse | null>(null);
+  const [badgeLoading, setBadgeLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading…</div>;
+  useEffect(() => {
+    if (!farmer?.farmer_id) {
+      setBadgeLoading(false);
+      return;
+    }
+    setBadgeLoading(true);
+    setError(null);
+    api.get<BadgeResponse>(`/badge/${farmer.farmer_id}`)
+      .then(setBadge)
+      .catch((err) => setError(err instanceof ApiRequestError ? err.message : 'Could not load your credential.'))
+      .finally(() => setBadgeLoading(false));
+  }, [farmer?.farmer_id]);
 
-  if (!primaryHolding || !latestEntry) {
+  if (loading || badgeLoading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading…</div>;
+
+  if (!badge) {
     return (
       <>
         <PageTitle eyebrow="Ledger credential" title="Your verifiable sustainability proof." />
         <div className="card-surface" style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>You need a verified entry to generate a credential.</p>
-          <Link to="/calculator" className="ws-btn ws-btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>Log an entry</Link>
+          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>
+            {error ?? 'A credential becomes available after your score is verified and anchored to the ledger.'}
+          </p>
+          <Link to="/verifications" className="ws-btn ws-btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>Review verification status</Link>
         </div>
       </>
     );
   }
 
-  const calc     = calculateFromEntry(latestEntry, primaryHolding.count);
-  const verified = latestEntry.status === 'verified';
-  const period   = `${new Date(latestEntry.period_start).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`;
+  const period = new Date(badge.verified_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
 
   return (
     <>
@@ -45,20 +65,20 @@ export default function Credential() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
             <div>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'rgba(253,246,236,0.55)' }}>FlockSense · Sustainability Credential</p>
-              <h2 style={{ marginTop: 8, fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em' }}>{farmer?.name ?? 'Your Farm'}</h2>
-              <p style={{ marginTop: 4, fontSize: 13, color: 'rgba(253,246,236,0.65)' }}>{farmer?.location?.label ?? '—'} · {period}</p>
+              <h2 style={{ marginTop: 8, fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em' }}>{badge.farmer_name}</h2>
+              <p style={{ marginTop: 4, fontSize: 13, color: 'rgba(253,246,236,0.65)' }}>{typeof farmer?.location === 'string' ? farmer.location : '—'} · {period}</p>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <ScoreDial score={calc.score} grade={calc.grade} verified={verified} compact />
+              <ScoreDial score={scoreByGrade[badge.overall_score] ?? 0} grade={badge.overall_score} verified compact />
             </div>
           </div>
 
           {/* Stats grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
-              { label: 'Total CO₂e',    value: `${calc.totalTons.toFixed(2)} t` },
-              { label: 'Per animal',    value: `${calc.perAnimal.toFixed(1)} kg` },
-              { label: 'Benchmark',     value: '−18%' },
+              { label: 'Sustainability score', value: badge.overall_score },
+              { label: 'Verified', value: period },
+              { label: 'Chain', value: badge.chain },
             ].map(({ label, value }) => (
               <div key={label} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '12px 14px' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(253,246,236,0.5)', marginBottom: 6 }}>{label}</p>
@@ -69,7 +89,7 @@ export default function Credential() {
 
           {/* Status */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20 }}>
-            <StatusSeal verified={verified} confirmations={verified ? 2 : 1} />
+            <span style={{ fontSize: 12, fontWeight: 700 }}>Peer verified</span>
             <ProofChip />
           </div>
         </article>
@@ -83,13 +103,10 @@ export default function Credential() {
             <div>
               <h3 style={{ fontSize: 14, fontWeight: 700 }}>How to share this credential</h3>
               <p style={{ marginTop: 6, fontSize: 13, lineHeight: 1.6, color: 'var(--color-text-secondary)' }}>
-                Share a PDF export or screenshot with your cooperative, SACCO, or buyer. The verification status and peer confirmations are embedded in the record.
+                This credential is backed by the ledger transaction <strong>{badge.ledger_tx_id}</strong>. Share a PDF export or screenshot with your cooperative, SACCO, or buyer.
               </p>
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <button className="ws-btn ws-btn-primary" onClick={() => window.print()}>Download PDF</button>
-                {!verified && (
-                  <Link to="/verifications" className="ws-btn ws-btn-outline">Get verified first →</Link>
-                )}
               </div>
             </div>
           </div>

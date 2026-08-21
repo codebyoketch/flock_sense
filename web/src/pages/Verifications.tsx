@@ -3,10 +3,8 @@ import { useState } from 'react';
 import { Check, CircleAlert, Flag, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
 import { api, ApiRequestError } from '../services/api';
 import { useApp } from '../contexts/AppContext';
-import { PageTitle, StatusSeal } from '../components/ProductPrimitives';
+import { PageTitle } from '../components/ProductPrimitives';
 import type { PendingVerification, SubmitVerificationResponse } from '../types';
-
-const TYPE_LABELS = { poultry: 'Poultry', dairy: 'Dairy', goats: 'Goats', other: 'Other' } as const;
 
 export default function Verifications() {
   const { verifications, loading, refresh } = useApp();
@@ -54,7 +52,6 @@ export default function Verifications() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {verifications.map((v: PendingVerification) => {
           const verdict = done[v.entry_id];
-          const isVerified = v.verifications_so_far >= v.verifications_required;
 
           return (
             <article key={v.entry_id} style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 20 }}>
@@ -63,12 +60,14 @@ export default function Verifications() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid rgba(156,175,136,0.2)', background: 'var(--color-background)', padding: '20px 24px' }}>
                   <div>
                     <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Verification request</p>
-                    <h2 style={{ marginTop: 4, fontSize: 20, fontWeight: 700, letterSpacing: '-0.035em' }}>{v.farmer_name}</h2>
+                    <h2 style={{ marginTop: 4, fontSize: 20, fontWeight: 700, letterSpacing: '-0.035em' }}>Peer farm entry</h2>
                     <p style={{ marginTop: 4, fontSize: 12, color: 'var(--color-text-secondary)' }}>
                       Period ending {new Date(v.period_end).toLocaleDateString('en-GB', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
-                  <StatusSeal verified={isVerified} confirmations={v.verifications_so_far} />
+                  <span style={{ background: 'rgba(255,140,66,0.12)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 700, color: '#7a4200' }}>
+                    Awaiting your review
+                  </span>
                 </div>
                 <div style={{ padding: '20px 24px' }}>
                   <p style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--color-text-secondary)' }}>
@@ -77,7 +76,7 @@ export default function Verifications() {
                   <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     {[
                       [`${v.estimated_co2e_kg.toFixed(1)} kg`, 'Estimated CO₂e'],
-                      [TYPE_LABELS[v.holding_type] ?? v.holding_type, 'Livestock type'],
+                      [`${v.feed_kg.toLocaleString()} kg`, `Feed · ${v.feed_type}`],
                     ].map(([value, label]) => (
                       <div key={label} style={{ background: 'rgba(156,175,136,0.08)', borderRadius: 12, padding: '12px 14px' }}>
                         <span style={{ display: 'block', fontSize: 15, fontWeight: 700 }}>{value}</span>
@@ -130,22 +129,21 @@ export default function Verifications() {
                       <UsersRound size={18} />
                     </span>
                     <div>
-                      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-text-secondary)' }}>Attestation trail</p>
-                      <h2 style={{ fontSize: 15, fontWeight: 700 }}>Confirmation status</h2>
+                      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-text-secondary)' }}>Reported inputs</p>
+                      <h2 style={{ fontSize: 15, fontWeight: 700 }}>Review context</h2>
                     </div>
                   </div>
                   <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {Array.from({ length: v.verifications_required }, (_, i) => {
-                      const confirmed = i < v.verifications_so_far;
-                      return (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(156,175,136,0.2)', borderRadius: 10, padding: '8px 12px' }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)' }}>Verifier {i + 1}</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: confirmed ? '#3a6e30' : '#9a5200' }}>
-                            {confirmed ? '✓ Confirmed' : '• Pending'}
-                          </span>
-                        </div>
-                      );
-                    })}
+                    {[
+                      [`${v.energy_kwh.toLocaleString()} kWh`, `${v.energy_source} energy`],
+                      [`${v.water_liters.toLocaleString()} L`, 'Water used'],
+                      [v.waste_handling.replace('_', ' '), 'Waste handling'],
+                    ].map(([value, label]) => (
+                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(156,175,136,0.2)', borderRadius: 10, padding: '8px 12px' }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)' }}>{label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700 }}>{value}</span>
+                      </div>
+                    ))}
                   </div>
                 </article>
 

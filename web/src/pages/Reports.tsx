@@ -1,13 +1,34 @@
 // src/pages/Reports.tsx
+import { useEffect, useState } from 'react';
 import { Download, Printer } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { calculateFromEntry } from '../lib/engine';
+import { api, ApiRequestError } from '../services/api';
 import { PageTitle, ScoreDial, StatusSeal, ProofChip } from '../components/ProductPrimitives';
 import { EmissionsDonut } from '../components/Charts';
 import { Link } from 'react-router-dom';
+import type { ReportResponse, Score } from '../types';
+
+const scoreByGrade: Record<string, number> = { A: 95, B: 82, C: 70, D: 58, E: 45 };
 
 export default function Reports() {
   const { farmer, primaryHolding, latestEntry, loading } = useApp();
+  const [report, setReport] = useState<ReportResponse | null>(null);
+  const [score, setScore] = useState<Score | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!farmer) return;
+    Promise.all([
+      api.get<ReportResponse>('/reports/me'),
+      api.get<Score>('/scores/me'),
+    ])
+      .then(([nextReport, nextScore]) => {
+        setReport(nextReport);
+        setScore(nextScore);
+      })
+      .catch((err) => setReportError(err instanceof ApiRequestError ? err.message : 'Could not load the latest report data.'));
+  }, [farmer]);
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading…</div>;
 
@@ -23,10 +44,10 @@ export default function Reports() {
     );
   }
 
-  const calc     = calculateFromEntry(latestEntry, primaryHolding.count);
-  const verified = latestEntry.status === 'verified';
+  const calc     = calculateFromEntry(latestEntry, primaryHolding.count, primaryHolding.type);
+  const verified = report ? report.footprint.verified_entries > 0 : latestEntry.status === 'verified';
   const period   = `${new Date(latestEntry.period_start).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}–${new Date(latestEntry.period_end).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-  const location = farmer?.location?.label ?? '—';
+  const location = typeof farmer?.location === 'string' ? farmer.location : '—';
 
   return (
     <>
@@ -39,7 +60,7 @@ export default function Reports() {
             <button className="ws-btn ws-btn-outline" onClick={() => window.print()}>
               <Printer size={15} /> Print
             </button>
-            <button className="ws-btn ws-btn-primary" onClick={() => alert('PDF download coming soon.')}>
+            <button className="ws-btn ws-btn-primary" onClick={() => window.print()}>
               <Download size={15} /> Download report
             </button>
           </>
@@ -47,6 +68,7 @@ export default function Reports() {
       />
 
       <article className="card-surface" style={{ overflow: 'hidden' }}>
+        {reportError && <p style={{ margin: '16px 28px 0', fontSize: 13, color: 'var(--color-error, #B00020)' }}>{reportError}</p>}
         {/* Report header */}
         <div style={{ borderBottom: '1px solid rgba(156,175,136,0.2)', background: 'var(--color-background)', padding: '24px 28px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
@@ -70,14 +92,14 @@ export default function Reports() {
         <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 24, padding: '24px 28px' }}>
           {/* Score column */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(156,175,136,0.08)', borderRadius: 16, padding: 24 }}>
-            <ScoreDial score={calc.score} grade={calc.grade} verified={verified} />
+            <ScoreDial score={score ? scoreByGrade[score.overall_score] ?? calc.score : calc.score} grade={score?.overall_score ?? calc.grade} verified={verified} />
             <p style={{ marginTop: 20, fontSize: 13, fontWeight: 700, textAlign: 'center' }}>Sustainability score</p>
             <p style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: 'var(--color-text-secondary)', textAlign: 'center' }}>
               Good overall performance. {calc.highestCategory.name} is the most actionable next area.
             </p>
             <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%', borderTop: '1px dashed rgba(156,175,136,0.4)', paddingTop: 20, textAlign: 'center' }}>
               <div>
-                <strong style={{ display: 'block', fontSize: 20 }}>{calc.totalTons.toFixed(2)}</strong>
+                <strong style={{ display: 'block', fontSize: 20 }}>{((report?.footprint.total_co2e_kg ?? latestEntry.estimated_co2e_kg) / 1000).toFixed(2)}</strong>
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-secondary)' }}>tCO₂e</span>
               </div>
               <div>
@@ -108,9 +130,9 @@ export default function Reports() {
         {/* Footer stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, borderTop: '1px solid rgba(156,175,136,0.2)', padding: '20px 28px' }}>
           {[
-            { label: 'Benchmark',             value: '18% below cooperative average' },
-            { label: 'Verification confidence', value: verified ? '2 peer confirmations' : 'Awaiting peer confirmation' },
-            { label: 'Ledger record',           value: verified ? 'Anchored to ledger' : 'Anchors after verification' },
+            { label: 'Latest reporting period', value: period },
+            { label: 'Verified entries', value: report ? String(report.footprint.verified_entries) : (verified ? '1' : '0') },
+            { label: 'Entries logged', value: report ? String(report.footprint.entry_count) : '1' },
           ].map(({ label, value }) => (
             <div key={label}>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>{label}</p>

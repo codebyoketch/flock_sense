@@ -1,14 +1,25 @@
 // src/pages/Footprint.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { calculateFromEntry } from '../lib/engine';
+import { api, ApiRequestError } from '../services/api';
 import { PageTitle } from '../components/ProductPrimitives';
 import { EmissionsDonut, FootprintTrend } from '../components/Charts';
 import { Link } from 'react-router-dom';
+import type { FootprintResponse } from '../types';
 
 export default function Footprint() {
-  const { primaryHolding, latestEntry, loading } = useApp();
+  const { farmer, primaryHolding, latestEntry, trendData, loading } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
+  const [footprint, setFootprint] = useState<FootprintResponse | null>(null);
+  const [footprintError, setFootprintError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!farmer) return;
+    api.get<FootprintResponse>('/footprint/me')
+      .then(setFootprint)
+      .catch((err) => setFootprintError(err instanceof ApiRequestError ? err.message : 'Could not load your full footprint.'));
+  }, [farmer]);
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading…</div>;
 
@@ -24,7 +35,7 @@ export default function Footprint() {
     );
   }
 
-  const calc = calculateFromEntry(latestEntry, primaryHolding.count);
+  const calc = calculateFromEntry(latestEntry, primaryHolding.count, primaryHolding.type);
   const activeBreakdown = selected
     ? calc.breakdown.find(b => b.name === selected) ?? calc.breakdown[0]
     : calc.breakdown[0];
@@ -45,7 +56,7 @@ export default function Footprint() {
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Estimated emissions</p>
               <h2 style={{ marginTop: 4, fontSize: 28, fontWeight: 700, letterSpacing: '-0.04em' }}>
-                {calc.totalTons.toFixed(2)} <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>tCO₂e</span>
+                {((footprint?.total_co2e_kg ?? latestEntry.estimated_co2e_kg) / 1000).toFixed(2)} <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>tCO₂e</span>
               </h2>
             </div>
             <span style={{ background: 'rgba(156,175,136,0.15)', borderRadius: 8, padding: '5px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#3a6e30' }}>Estimate</span>
@@ -93,7 +104,8 @@ export default function Footprint() {
       <article className="card-surface" style={{ padding: 24 }}>
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Trend</p>
         <h2 style={{ marginTop: 4, fontSize: 18, fontWeight: 700, letterSpacing: '-0.035em' }}>Your footprint is moving in the right direction.</h2>
-        <div style={{ marginTop: 16 }}><FootprintTrend /></div>
+        <div style={{ marginTop: 16 }}><FootprintTrend data={trendData.length >= 2 ? trendData : undefined} /></div>
+        {footprintError && <p style={{ marginTop: 12, fontSize: 12, color: 'var(--color-error, #B00020)' }}>{footprintError}</p>}
       </article>
     </>
   );

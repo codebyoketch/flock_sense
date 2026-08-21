@@ -38,18 +38,11 @@ export default function Cooperative() {
             </Link>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignSelf: 'end' }}>
-            {[
-              { value: '93',  label: 'verified farms across the cooperative' },
-              { value: 'B',   label: 'average sustainability score' },
-              { value: '18%', label: 'average emissions reduction' },
-              { value: '24',  label: 'farms improving this period' },
-            ].map(({ value, label }) => (
-              <div key={label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: '16px 14px', backdropFilter: 'blur(4px)' }}>
-                <span style={{ display: 'block', fontSize: 28, fontWeight: 700 }}>{value}</span>
-                <p style={{ marginTop: 4, fontSize: 12, lineHeight: 1.4, color: 'rgba(253,246,236,0.65)' }}>{label}</p>
-              </div>
-            ))}
+          <div style={{ alignSelf: 'end', background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: '18px 16px', backdropFilter: 'blur(4px)' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(253,246,236,0.55)' }}>Your membership</p>
+            <strong style={{ display: 'block', marginTop: 8, fontSize: 18 }}>Cooperative ID</strong>
+            <p style={{ marginTop: 4, fontSize: 13, lineHeight: 1.4, color: 'rgba(253,246,236,0.72)' }}>{farmer?.cooperative_id ?? 'Not assigned'}</p>
+            <p style={{ marginTop: 14, fontSize: 12, lineHeight: 1.5, color: 'rgba(253,246,236,0.65)' }}>Aggregate cooperative metrics are available to cooperative administrators, not farmer accounts.</p>
           </div>
         </div>
       </div>

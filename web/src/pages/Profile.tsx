@@ -1,11 +1,11 @@
-// src/pages/Profile.tsx  (rewritten to MVP layout)
-import { useState } from 'react';
+// src/pages/Profile.tsx
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { BadgeCheck, MapPin } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { api, ApiRequestError } from '../services/api';
 import { PageTitle } from '../components/ProductPrimitives';
-import type { Farmer, UpdateFarmerRequest } from '../types';
+import type { Farmer, UpdateFarmerRequest, Score, ReciprocityStatus } from '../types';
 
 export default function Profile() {
   const { farmer, loading, refresh } = useApp();
@@ -13,6 +13,21 @@ export default function Profile() {
   const [nameInput, setNameInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [score, setScore] = useState<Score | null>(null);
+  const [reciprocity, setReciprocity] = useState<ReciprocityStatus | null>(null);
+
+  // Fetch score + reciprocity once the farmer is loaded
+  useEffect(() => {
+    if (!farmer) return;
+    Promise.allSettled([
+      api.get<Score>('/scores/me'),
+      api.get<ReciprocityStatus>('/verifications/reciprocity'),
+    ]).then(([scoreRes, recipRes]) => {
+      if (scoreRes.status === 'fulfilled') setScore(scoreRes.value);
+      if (recipRes.status === 'fulfilled') setReciprocity(recipRes.value);
+    });
+  }, [farmer]);
 
   function startEdit() {
     setNameInput(farmer?.name ?? '');
@@ -26,7 +41,7 @@ export default function Profile() {
     setError(null);
     try {
       const body: UpdateFarmerRequest = { name: nameInput.trim() };
-      await api.patch<Farmer>('/profile', body);
+      await api.patch<Farmer>('/farmers/me', body);  // Go: PATCH /farmers/me
       refresh();
       setEditing(false);
     } catch (err) {
@@ -41,10 +56,19 @@ export default function Profile() {
   const farmDetails = [
     ['Farm owner',     farmer?.name ?? '—'],
     ['Phone',          farmer?.phone ?? '—'],
-    ['Location',       farmer?.location?.label ?? '—'],
-    ['Farmer group',   farmer?.cooperative_name ?? '—'],
+    ['Location',       typeof farmer?.location === 'string' ? farmer.location : '—'],
+    ['Farmer group',   farmer?.cooperative_id ?? '—'],
     ['Language',       farmer?.language ?? '—'],
   ];
+
+  const scoreGrade    = score?.overall_score ?? '—';
+  const givenCount    = reciprocity?.given ?? 0;
+  const owedCount     = reciprocity?.owed  ?? 0;
+  const scoreActive   = reciprocity?.score_active ?? false;
+  // Rough accuracy: given / max(given + owed, 1)
+  const accuracyPct   = givenCount + owedCount > 0
+    ? Math.round((givenCount / (givenCount + owedCount)) * 100)
+    : null;
 
   return (
     <>
@@ -104,13 +128,17 @@ export default function Profile() {
               <BadgeCheck size={20} />
             </span>
             <div>
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Verifier reputation</p>
-              <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.035em' }}>94 / 100</h2>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Sustainability score</p>
+              <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.035em' }}>{scoreGrade}</h2>
             </div>
           </div>
 
           <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, textAlign: 'center' }}>
-            {[['18', 'successful'], ['1', 'disputed'], ['94%', 'accuracy']].map(([value, label]) => (
+            {[
+              [String(givenCount),                             'verified'],
+              [String(owedCount),                              'owed'],
+              [accuracyPct !== null ? `${accuracyPct}%` : '—', 'ratio'],
+            ].map(([value, label]) => (
               <div key={label} style={{ background: 'rgba(156,175,136,0.07)', borderRadius: 12, padding: '12px 10px' }}>
                 <strong style={{ display: 'block', fontSize: 18 }}>{value}</strong>
                 <span style={{ marginTop: 4, display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--color-text-secondary)' }}>{label}</span>
@@ -120,10 +148,13 @@ export default function Profile() {
 
           <div style={{ marginTop: 20, background: 'var(--color-primary)', borderRadius: 16, padding: '16px 18px', color: '#FDF6EC' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
-              <span style={{ color: 'var(--color-secondary)' }}>◎</span> Reciprocity active
+              <span style={{ color: 'var(--color-secondary)' }}>◎</span>
+              {scoreActive ? 'Reciprocity active' : 'Reciprocity pending'}
             </div>
             <p style={{ marginTop: 8, fontSize: 12, lineHeight: 1.55, color: 'rgba(253,246,236,0.72)' }}>
-              You have verified peer farm logs, so your own farm can receive credibility from the same community process.
+              {scoreActive
+                ? 'You have verified peer farm logs, so your own farm can receive credibility from the same community process.'
+                : 'Verify peer entries to activate reciprocity and have your own records confirmed by the community.'}
             </p>
           </div>
         </article>

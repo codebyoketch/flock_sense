@@ -1,9 +1,12 @@
 // src/pages/Recommendations.tsx
+import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, CircleDollarSign, TimerReset } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { calculateFromEntry, getRecommendation } from '../lib/engine';
+import { api, ApiRequestError } from '../services/api';
 import { PageTitle, RecommendationCard } from '../components/ProductPrimitives';
 import { Link } from 'react-router-dom';
+import type { Score } from '../types';
 
 const stepCards = [
   { title: 'Start composting',     text: 'Ask the cooperative about a shared composting approach.',          status: 'Highest impact' },
@@ -12,7 +15,16 @@ const stepCards = [
 ];
 
 export default function Recommendations() {
-  const { primaryHolding, latestEntry, loading } = useApp();
+  const { farmer, primaryHolding, latestEntry, loading } = useApp();
+  const [score, setScore] = useState<Score | null>(null);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!farmer) return;
+    api.get<Score>('/scores/me')
+      .then(setScore)
+      .catch((err) => setScoreError(err instanceof ApiRequestError ? err.message : 'Could not load a saved recommendation.'));
+  }, [farmer]);
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading…</div>;
 
@@ -28,8 +40,16 @@ export default function Recommendations() {
     );
   }
 
-  const calc = calculateFromEntry(latestEntry, primaryHolding.count);
-  const rec  = getRecommendation(calc, latestEntry.waste_handling, latestEntry.energy.source);
+  const calc = calculateFromEntry(latestEntry, primaryHolding.count, primaryHolding.type);
+  const localRec = getRecommendation(calc, latestEntry.waste_handling, latestEntry.energy_source);
+  const rec = score?.recommendation
+    ? {
+        title: score.recommendation.title,
+        body: score.recommendation.body,
+        impact: `Current sustainability score: ${score.overall_score}`,
+        action: 'Keep tracking',
+      }
+    : localRec;
 
   const decisionTrail = [
     { icon: AlertTriangle,      title: 'Largest contributor',    text: `${calc.highestCategory.name} is ${Math.round((calc.highestCategory.value / calc.totalKg) * 100)}% of the estimated footprint.` },
@@ -66,6 +86,8 @@ export default function Recommendations() {
           </div>
         </article>
       </div>
+
+      {scoreError && <p style={{ marginBottom: 16, fontSize: 13, color: 'var(--color-error, #B00020)' }}>{scoreError}</p>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {stepCards.map((item, idx) => (

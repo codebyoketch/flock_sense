@@ -95,6 +95,7 @@ func (s *Server) router() *gin.Engine {
 	v.POST("/auth/admin/login", s.AdminAuth.Login)
 	a := v.Group("/")
 	a.Use(middleware.Auth(s.Secret))
+	a.Use(middleware.RequireRole("farmer"))
 	a.GET("/farmers/me", s.Farmer.Me)
 	a.PATCH("/farmers/me", s.Farmer.Update)
 	a.GET("/holdings", s.Holdings.List)

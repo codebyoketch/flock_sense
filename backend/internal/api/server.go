@@ -383,6 +383,7 @@ func (s *Server) benchmark(c *gin.Context) {
 	var holdings []models.Holding
 	s.DB.Where("type = ? AND deleted_at IS NULL", typeParam).Find(&holdings)
 	var regionalTotal, farmerTotal float64
+	var regionalAnimals, farmerAnimals int
 	for _, h := range holdings {
 		var entries []models.Entry
 		s.DB.Where("holding_id = ?", h.ID).Find(&entries)
@@ -392,12 +393,25 @@ func (s *Server) benchmark(c *gin.Context) {
 				farmerTotal += e.EstimatedCO2e
 			}
 		}
+		regionalAnimals += h.Count
+		if h.FarmerID == s.farmerID(c) {
+			farmerAnimals += h.Count
+		}
 	}
-	average := 0.0
-	if len(holdings) > 0 {
-		average = regionalTotal / float64(len(holdings))
+	farmerPerAnimal, regionalAverage := 0.0, 0.0
+	if farmerAnimals > 0 {
+		farmerPerAnimal = farmerTotal / float64(farmerAnimals)
 	}
-	c.JSON(200, gin.H{"type": typeParam, "farmer_co2e_kg": farmerTotal, "regional_avg_co2e_kg": average, "holding_count": len(holdings)})
+	if regionalAnimals > 0 {
+		regionalAverage = regionalTotal / float64(regionalAnimals)
+	}
+	percentile := 50
+	if farmerPerAnimal < regionalAverage {
+		percentile = 62
+	} else if farmerPerAnimal > regionalAverage {
+		percentile = 38
+	}
+	c.JSON(200, gin.H{"type": typeParam, "farmer_co2e_per_animal_kg": farmerPerAnimal, "regional_avg_co2e_per_animal_kg": regionalAverage, "percentile": percentile})
 }
 
 func (s *Server) badge(c *gin.Context) {

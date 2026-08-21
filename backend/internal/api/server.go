@@ -409,7 +409,7 @@ func (s *Server) ledger(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	c.JSON(200, a)
+	c.JSON(200, gin.H{"tx_id": a.TxID, "score_hash": a.ScoreHash, "chain": a.Chain, "attestation_trail": a.AttestationTrail, "anchored_at": a.AnchoredAt})
 }
 func hash(v string) string {
 	h := sha256.Sum256([]byte(v))

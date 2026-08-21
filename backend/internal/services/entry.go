@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/flocksense/backend/internal/emissions"
 	"github.com/flocksense/backend/internal/models"
+	"gorm.io/gorm"
 	"time"
 )
 

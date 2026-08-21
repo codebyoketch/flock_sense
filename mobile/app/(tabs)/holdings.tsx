@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Modal, TextInput, Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { getHoldings, createHolding } from "@/services/holdings";
+import { COLORS, RADII } from "@/constants/theme";
 import type { Holding, LivestockType } from "@/types";
 
 const TYPES: LivestockType[] = ["poultry", "dairy", "goats", "other"];
@@ -111,40 +112,52 @@ export default function Holdings() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  muted: { color: "#777", textAlign: "center", marginTop: 40 },
+  muted: { color: COLORS.textMuted, textAlign: "center", marginTop: 40 },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADII.md,
     padding: 16,
     marginBottom: 10,
   },
   rowTitle: { fontSize: 16, fontWeight: "600", textTransform: "capitalize" },
-  rowSub: { fontSize: 13, color: "#777", marginTop: 2 },
-  chevron: { fontSize: 20, color: "#999" },
+  rowSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+  chevron: { fontSize: 20, color: COLORS.textFaint },
   fab: {
     position: "absolute",
     bottom: 20,
     left: 16,
     right: 16,
-    backgroundColor: "#2e7d32",
-    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADII.md,
     padding: 16,
     alignItems: "center",
   },
-  fabText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modalCard: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, gap: 12 },
+  fabText: { color: COLORS.white, fontWeight: "600", fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: "flex-end" },
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADII.xl,
+    borderTopRightRadius: RADII.xl,
+    padding: 20,
+    gap: 12,
+  },
   modalTitle: { fontSize: 18, fontWeight: "700" },
   typeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  typeChip: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14 },
-  typeChipActive: { backgroundColor: "#2e7d32", borderColor: "#2e7d32" },
-  typeChipText: { textTransform: "capitalize", color: "#333" },
-  typeChipTextActive: { color: "#fff" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 14, fontSize: 16 },
-  primaryButton: { backgroundColor: "#2e7d32", borderRadius: 8, padding: 14, alignItems: "center" },
-  primaryButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  cancelText: { textAlign: "center", color: "#777", padding: 6 },
+  typeChip: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADII.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  typeChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  typeChipText: { textTransform: "capitalize", color: COLORS.textDark },
+  typeChipTextActive: { color: COLORS.white },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADII.sm, padding: 14, fontSize: 16 },
+  primaryButton: { backgroundColor: COLORS.primary, borderRadius: RADII.sm, padding: 14, alignItems: "center" },
+  primaryButtonText: { color: COLORS.white, fontWeight: "600", fontSize: 16 },
+  cancelText: { textAlign: "center", color: COLORS.textMuted, padding: 6 },
 });

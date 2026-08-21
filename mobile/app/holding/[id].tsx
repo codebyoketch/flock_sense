@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { getEntriesForHolding } from "@/services/entries";
+import { COLORS, RADII } from "@/constants/theme";
 import type { Entry } from "@/types";
 
 const STATUS_LABEL: Record<Entry["status"], string> = {
@@ -45,9 +46,9 @@ export default function HoldingDetail() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  muted: { color: "#777", textAlign: "center", marginTop: 40 },
-  card: { backgroundColor: "#f5f5f5", borderRadius: 10, padding: 14, marginBottom: 10 },
+  muted: { color: COLORS.textMuted, textAlign: "center", marginTop: 40 },
+  card: { backgroundColor: COLORS.surface, borderRadius: RADII.md, padding: 14, marginBottom: 10 },
   period: { fontSize: 14, fontWeight: "600" },
-  status: { fontSize: 12, color: "#777", marginTop: 2 },
-  co2e: { fontSize: 13, color: "#2e7d32", marginTop: 6, fontWeight: "600" },
+  status: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  co2e: { fontSize: 13, color: COLORS.primary, marginTop: 6, fontWeight: "600" },
 });

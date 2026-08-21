@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getEntry } from "@/services/entries";
+import { COLORS } from "@/constants/theme";
 import type { Entry } from "@/types";
 
 export default function EntryDetail() {
@@ -19,7 +20,7 @@ export default function EntryDetail() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#2e7d32" />
+        <ActivityIndicator color={COLORS.primary} />
       </View>
     );
   }
@@ -59,15 +60,15 @@ function Row({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  muted: { color: "#777", textAlign: "center", padding: 24 },
+  muted: { color: COLORS.textMuted, textAlign: "center", padding: 24 },
   period: { fontSize: 16, fontWeight: "700", marginBottom: 16 },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: COLORS.borderLight,
   },
-  rowLabel: { color: "#777" },
+  rowLabel: { color: COLORS.textMuted },
   rowValue: { fontWeight: "600", textTransform: "capitalize" },
 });

@@ -4,6 +4,7 @@ import { ScoreBadge } from "@/components/ScoreBadge";
 import { getMyScore } from "@/services/scores";
 import { getBadge, getBadgeShareUrl, getQrImageUrl } from "@/services/badge";
 import { useAuth } from "@/context/AuthContext";
+import { COLORS, RADII } from "@/constants/theme";
 import type { ScoreSummary, BadgeData } from "@/types";
 import { useFocusEffect, useRouter } from "expo-router";
 
@@ -95,41 +96,41 @@ export default function Score() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
-  muted: { color: "#777", textAlign: "center" },
+  muted: { color: COLORS.textMuted, textAlign: "center" },
   overallCard: { alignItems: "center", marginBottom: 24 },
-  overallLabel: { marginTop: 8, fontSize: 14, color: "#555" },
+  overallLabel: { marginTop: 8, fontSize: 14, color: COLORS.textSecondary },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  holdingCard: { backgroundColor: "#f5f5f5", borderRadius: 12, padding: 14, marginBottom: 14 },
+  holdingCard: { backgroundColor: COLORS.surface, borderRadius: RADII.lg, padding: 14, marginBottom: 14 },
   holdingHeader: { flexDirection: "row", alignItems: "center" },
   holdingType: { fontSize: 15, fontWeight: "700", textTransform: "capitalize" },
-  holdingMeta: { fontSize: 12, color: "#777", marginTop: 2 },
-  recCard: { backgroundColor: "#fff", borderRadius: 8, padding: 12, marginTop: 12 },
-  recTitle: { fontSize: 13, fontWeight: "700", color: "#2e7d32" },
-  recBody: { fontSize: 13, color: "#555", marginTop: 4 },
+  holdingMeta: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  recCard: { backgroundColor: COLORS.white, borderRadius: RADII.sm, padding: 12, marginTop: 12 },
+  recTitle: { fontSize: 13, fontWeight: "700", color: COLORS.primary },
+  recBody: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
   badgeCard: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADII.lg,
     padding: 20,
     alignItems: "center",
     marginBottom: 24,
   },
   badgeCardTitle: { fontSize: 15, fontWeight: "700", marginBottom: 12 },
-  qrImage: { width: 180, height: 180, borderRadius: 8, backgroundColor: "#fff" },
-  badgeMeta: { fontSize: 12, color: "#777", marginTop: 12 },
+  qrImage: { width: 180, height: 180, borderRadius: RADII.sm, backgroundColor: COLORS.white },
+  badgeMeta: { fontSize: 12, color: COLORS.textMuted, marginTop: 12 },
   proofButton: {
     marginTop: 14,
-    backgroundColor: "#2e7d32",
-    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADII.sm,
     paddingVertical: 10,
     paddingHorizontal: 20,
   },
-  proofButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  proofButtonText: { color: COLORS.white, fontWeight: "600", fontSize: 13 },
   badgeNotReadyCard: {
-    backgroundColor: "#fff3e0",
-    borderRadius: 12,
+    backgroundColor: COLORS.warningLight,
+    borderRadius: RADII.lg,
     padding: 16,
     marginBottom: 24,
   },
-  badgeNotReadyTitle: { fontSize: 14, fontWeight: "700", color: "#e65100" },
-  badgeNotReadyBody: { fontSize: 13, color: "#8a5a1f", marginTop: 4 },
+  badgeNotReadyTitle: { fontSize: 14, fontWeight: "700", color: COLORS.warningDarker },
+  badgeNotReadyBody: { fontSize: 13, color: COLORS.warningText, marginTop: 4 },
 });

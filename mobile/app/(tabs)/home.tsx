@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getMyScore } from "@/services/scores";
 import { getPendingVerifications } from "@/services/verification";
 import { getHoldings } from "@/services/holdings";
+import { COLORS, RADII } from "@/constants/theme";
 import type { ScoreSummary, PendingVerification } from "@/types";
 
 export default function Home() {
@@ -105,35 +106,35 @@ const styles = StyleSheet.create({
   scoreCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADII.lg,
     padding: 16,
     marginTop: 20,
   },
-  scoreLabel: { fontSize: 14, color: "#555" },
+  scoreLabel: { fontSize: 14, color: COLORS.textSecondary },
   holdingSummary: { fontSize: 15, fontWeight: "600", marginTop: 4 },
-  muted: { color: "#777" },
+  muted: { color: COLORS.textMuted },
   onboardingCard: {
-    backgroundColor: "#e8f5e9",
-    borderRadius: 12,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADII.lg,
     padding: 20,
     marginTop: 20,
   },
-  onboardingTitle: { fontSize: 17, fontWeight: "700", color: "#1b5e20" },
-  onboardingBody: { fontSize: 14, color: "#33691e", marginTop: 8, lineHeight: 20 },
+  onboardingTitle: { fontSize: 17, fontWeight: "700", color: COLORS.primaryDark },
+  onboardingBody: { fontSize: 14, color: COLORS.primaryDarkText, marginTop: 8, lineHeight: 20 },
   primaryButton: {
-    backgroundColor: "#2e7d32",
-    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADII.md,
     padding: 16,
     alignItems: "center",
     marginTop: 20,
   },
-  primaryButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  primaryButtonText: { color: COLORS.white, fontSize: 16, fontWeight: "600" },
   verifyCard: {
-    backgroundColor: "#fff3e0",
-    borderRadius: 10,
+    backgroundColor: COLORS.warningLight,
+    borderRadius: RADII.md,
     padding: 14,
     marginTop: 16,
   },
-  verifyText: { color: "#e65100", fontWeight: "600" },
+  verifyText: { color: COLORS.warningDarker, fontWeight: "600" },
 });

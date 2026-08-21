@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Alert } from "react-native";
 import { getHoldings } from "@/services/holdings";
 import { logEntry } from "@/services/entries";
+import { COLORS, RADII } from "@/constants/theme";
 import type { Holding } from "@/types";
 import { useFocusEffect } from "expo-router";
 
@@ -143,14 +144,26 @@ export default function LogEntry() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 4 },
-  label: { fontSize: 13, fontWeight: "600", color: "#555", marginTop: 8 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, fontSize: 15 },
+  label: { fontSize: 13, fontWeight: "600", color: COLORS.textSecondary, marginTop: 8 },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADII.sm, padding: 12, fontSize: 15 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14 },
-  chipActive: { backgroundColor: "#2e7d32", borderColor: "#2e7d32" },
-  chipText: { textTransform: "capitalize", color: "#333", fontSize: 13 },
-  chipTextActive: { color: "#fff" },
-  submitButton: { backgroundColor: "#2e7d32", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 16 },
-  submitButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  footnote: { fontSize: 12, color: "#888", textAlign: "center", marginTop: 8, marginBottom: 24 },
+  chip: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADII.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  chipText: { textTransform: "capitalize", color: COLORS.textDark, fontSize: 13 },
+  chipTextActive: { color: COLORS.white },
+  submitButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADII.md,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  submitButtonText: { color: COLORS.white, fontWeight: "600", fontSize: 16 },
+  footnote: { fontSize: 12, color: COLORS.textFootnote, textAlign: "center", marginTop: 8, marginBottom: 24 },
 });

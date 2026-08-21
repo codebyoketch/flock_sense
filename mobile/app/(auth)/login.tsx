@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-nativ
 import { Link } from "expo-router";
 import { requestOtp, verifyOtp } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
+import { COLORS, RADII } from "@/constants/theme";
 
 export default function Login() {
   const [phone, setPhone] = useState("");
@@ -88,21 +89,21 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 24, gap: 12 },
   title: { fontSize: 32, fontWeight: "700", textAlign: "center", marginBottom: 4 },
-  subtitle: { fontSize: 15, color: "#555", textAlign: "center", marginBottom: 20 },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary, textAlign: "center", marginBottom: 20 },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: COLORS.border,
+    borderRadius: RADII.sm,
     padding: 14,
     fontSize: 16,
   },
   button: {
-    backgroundColor: "#2e7d32",
-    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADII.sm,
     padding: 14,
     alignItems: "center",
     marginTop: 4,
   },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  link: { textAlign: "center", color: "#2e7d32", marginTop: 16 },
+  buttonText: { color: COLORS.white, fontSize: 16, fontWeight: "600" },
+  link: { textAlign: "center", color: COLORS.primary, marginTop: 16 },
 });

@@ -1,13 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import type { ScoreGrade } from "@/types";
-
-const GRADE_COLORS: Record<ScoreGrade, string> = {
-  A: "#1b5e20",
-  B: "#558b2f",
-  C: "#f9a825",
-  D: "#ef6c00",
-  E: "#c62828",
-};
+import { COLORS, GRADE_COLORS } from "@/constants/theme";
 
 export function ScoreBadge({ grade, size = "medium" }: { grade: ScoreGrade; size?: "small" | "medium" | "large" }) {
   const dims = size === "small" ? 32 : size === "large" ? 72 : 48;
@@ -27,5 +20,5 @@ export function ScoreBadge({ grade, size = "medium" }: { grade: ScoreGrade; size
 
 const styles = StyleSheet.create({
   badge: { alignItems: "center", justifyContent: "center" },
-  text: { color: "#fff", fontWeight: "700" },
+  text: { color: COLORS.white, fontWeight: "700" },
 });

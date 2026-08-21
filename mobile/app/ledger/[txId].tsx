@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getLedgerProof } from "@/services/badge";
+import { COLORS, RADII } from "@/constants/theme";
 import type { LedgerProof } from "@/types";
 
 export default function LedgerProofScreen() {
@@ -21,7 +22,7 @@ export default function LedgerProofScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#2e7d32" />
+        <ActivityIndicator color={COLORS.primary} />
       </View>
     );
   }
@@ -83,21 +84,28 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
-  muted: { color: "#777", textAlign: "center" },
+  muted: { color: COLORS.textMuted, textAlign: "center" },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 16 },
-  summaryCard: { backgroundColor: "#f5f5f5", borderRadius: 12, padding: 16, marginBottom: 24 },
+  summaryCard: { backgroundColor: COLORS.surface, borderRadius: RADII.lg, padding: 16, marginBottom: 24 },
   row: { marginBottom: 10 },
-  rowLabel: { fontSize: 12, color: "#777" },
+  rowLabel: { fontSize: 12, color: COLORS.textMuted },
   rowValue: { fontSize: 14, fontWeight: "600", marginTop: 2 },
   mono: { fontFamily: "monospace" },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  sectionSubtitle: { fontSize: 13, color: "#666", marginBottom: 16 },
-  attestationCard: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#eee", borderRadius: 10, padding: 12, marginBottom: 10 },
+  sectionSubtitle: { fontSize: 13, color: COLORS.textSecondaryAlt, marginBottom: 16 },
+  attestationCard: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    borderRadius: RADII.md,
+    padding: 12,
+    marginBottom: 10,
+  },
   attestationHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  verdictDot: { width: 8, height: 8, borderRadius: 4 },
-  confirmDot: { backgroundColor: "#2e7d32" },
-  flagDot: { backgroundColor: "#c62828" },
+  verdictDot: { width: 8, height: 8, borderRadius: RADII.xs },
+  confirmDot: { backgroundColor: COLORS.primary },
+  flagDot: { backgroundColor: COLORS.danger },
   verdictLabel: { fontSize: 13, fontWeight: "700", flex: 1 },
-  timestamp: { fontSize: 12, color: "#999" },
-  hashLine: { fontSize: 12, color: "#777", fontFamily: "monospace", marginTop: 2 },
+  timestamp: { fontSize: 12, color: COLORS.textFaint },
+  hashLine: { fontSize: 12, color: COLORS.textMuted, fontFamily: "monospace", marginTop: 2 },
 });

@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Alert, Modal, TextInput } from "react-native";
 import { getPendingVerifications, submitVerification, getReciprocity } from "@/services/verification";
+import { COLORS, RADII } from "@/constants/theme";
 import type { PendingVerification, Reciprocity } from "@/types";
 import { useFocusEffect } from "expo-router";
 
@@ -132,32 +133,38 @@ export default function Verify() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  reciprocityBar: { backgroundColor: "#e8f5e9", padding: 12 },
-  reciprocityText: { fontSize: 13, color: "#2e7d32", textAlign: "center" },
-  muted: { color: "#777", textAlign: "center", marginTop: 40 },
-  card: { backgroundColor: "#f5f5f5", borderRadius: 10, padding: 16, marginBottom: 12 },
+  reciprocityBar: { backgroundColor: COLORS.primaryLight, padding: 12 },
+  reciprocityText: { fontSize: 13, color: COLORS.primary, textAlign: "center" },
+  muted: { color: COLORS.textMuted, textAlign: "center", marginTop: 40 },
+  card: { backgroundColor: COLORS.surface, borderRadius: RADII.md, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 15, fontWeight: "700", textTransform: "capitalize" },
-  cardSub: { fontSize: 13, color: "#666", marginTop: 2 },
+  cardSub: { fontSize: 13, color: COLORS.textSecondaryAlt, marginTop: 2 },
   actionRow: { flexDirection: "row", gap: 8, marginTop: 12 },
-  actionButton: { flex: 1, borderRadius: 8, padding: 10, alignItems: "center" },
-  confirmButton: { backgroundColor: "#2e7d32" },
-  confirmText: { color: "#fff", fontWeight: "600", fontSize: 13 },
-  flagButton: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#c62828" },
-  flagText: { color: "#c62828", fontWeight: "600", fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modalCard: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, gap: 12 },
+  actionButton: { flex: 1, borderRadius: RADII.sm, padding: 10, alignItems: "center" },
+  confirmButton: { backgroundColor: COLORS.primary },
+  confirmText: { color: COLORS.white, fontWeight: "600", fontSize: 13 },
+  flagButton: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.danger },
+  flagText: { color: COLORS.danger, fontWeight: "600", fontSize: 13 },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: "flex-end" },
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADII.xl,
+    borderTopRightRadius: RADII.xl,
+    padding: 20,
+    gap: 12,
+  },
   modalTitle: { fontSize: 18, fontWeight: "700" },
-  modalSubtitle: { fontSize: 13, color: "#777", marginTop: -8 },
+  modalSubtitle: { fontSize: 13, color: COLORS.textMuted, marginTop: -8 },
   noteInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: COLORS.border,
+    borderRadius: RADII.sm,
     padding: 14,
     fontSize: 15,
     minHeight: 80,
     textAlignVertical: "top",
   },
-  submitFlagButton: { backgroundColor: "#c62828", borderRadius: 8, padding: 14, alignItems: "center" },
-  submitFlagText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  cancelText: { textAlign: "center", color: "#777", padding: 6 },
+  submitFlagButton: { backgroundColor: COLORS.danger, borderRadius: RADII.sm, padding: 14, alignItems: "center" },
+  submitFlagText: { color: COLORS.white, fontWeight: "600", fontSize: 16 },
+  cancelText: { textAlign: "center", color: COLORS.textMuted, padding: 6 },
 });

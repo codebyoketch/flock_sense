@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { watchConnectivityForSync } from "@/services/sync";
+import { watchPendingVerifications } from "@/services/notifications";
 
 function RootNavigation() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,6 +25,12 @@ function RootNavigation() {
     const unsubscribe = watchConnectivityForSync();
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const unsubscribe = watchPendingVerifications();
+    return unsubscribe;
+  }, [isAuthenticated]);
 
   if (isLoading) return null; // could render a splash screen here
 

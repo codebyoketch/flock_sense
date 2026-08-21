@@ -82,6 +82,12 @@ func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
 	return results
 }
 
+func (s *EntryService) ListByFarmerStatus(farmerID, status string) ([]models.Entry, error) {
+	return s.entries.(interface {
+		ListByFarmerStatus(string, string) ([]models.Entry, error)
+	}).ListByFarmerStatus(farmerID, status)
+}
+
 func (s *EntryService) Get(farmerID, entryID string) (models.Entry, error) {
 	entry, err := s.entries.(interface {
 		FindByID(string) (models.Entry, error)

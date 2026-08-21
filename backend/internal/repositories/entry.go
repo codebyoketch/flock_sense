@@ -20,3 +20,10 @@ func (r *EntryRepository) ListByHolding(holdingID string) ([]models.Entry, error
 	err := r.db.Where("holding_id = ?", holdingID).Find(&entries).Error
 	return entries, err
 }
+
+func (r *EntryRepository) FindByClientID(clientID string) (models.Entry, error) {
+	var entry models.Entry
+	err := r.db.Where("client_id = ?", clientID).First(&entry).Error
+	return entry, err
+}
+func (r *EntryRepository) Create(entry *models.Entry) error { return r.db.Create(entry).Error }

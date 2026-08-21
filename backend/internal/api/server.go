@@ -32,6 +32,7 @@ type Server struct {
 	Benchmarks   *handlers.BenchmarkHandler
 	Verification *handlers.VerificationHandler
 	Auth         *handlers.AuthHandler
+	Entries      *handlers.EntryHandler
 }
 
 type holdingRequest struct {
@@ -71,7 +72,8 @@ func New(database *gorm.DB, secret string) *Server {
 	verificationRepository := repositories.NewVerificationRepository(database)
 	verificationService := services.NewVerificationService(verificationRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService)}
+	entryService := services.NewEntryService(holdingRepository, entryRepository)
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -88,7 +90,7 @@ func (s *Server) router() *gin.Engine {
 	a.POST("/holdings", s.Holdings.Create)
 	a.PATCH("/holdings/:id", s.updateHolding)
 	a.DELETE("/holdings/:id", s.deleteHolding)
-	a.POST("/entries", s.createEntry)
+	a.POST("/entries", s.Entries.Create)
 	a.POST("/entries/sync", s.syncEntries)
 	a.GET("/holdings/:id/entries", s.listEntries)
 	a.GET("/verifications/pending", s.pending)

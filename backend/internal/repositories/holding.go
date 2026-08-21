@@ -22,3 +22,9 @@ func (r *HoldingRepository) ListByType(livestockType string) ([]models.Holding, 
 	err := r.db.Where("type = ? AND deleted_at IS NULL", livestockType).Find(&holdings).Error
 	return holdings, err
 }
+
+func (r *HoldingRepository) FindOwned(id, farmerID string) (models.Holding, error) {
+	var holding models.Holding
+	err := r.db.First(&holding, "id = ? AND farmer_id = ? AND deleted_at IS NULL", id, farmerID).Error
+	return holding, err
+}

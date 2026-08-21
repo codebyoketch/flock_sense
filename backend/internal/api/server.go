@@ -22,6 +22,24 @@ type Server struct {
 	Chain  blockchain.Client
 }
 
+type holdingRequest struct {
+	Type  string `json:"type"`
+	Count int    `json:"count"`
+}
+
+type entryRequest struct {
+	ClientID      string  `json:"client_id"`
+	HoldingID     string  `json:"holding_id"`
+	PeriodStart   string  `json:"period_start"`
+	PeriodEnd     string  `json:"period_end"`
+	FeedType      string  `json:"feed_type"`
+	FeedKg        float64 `json:"feed_kg"`
+	EnergySource  string  `json:"energy_source"`
+	EnergyKwh     float64 `json:"energy_kwh"`
+	WaterLiters   float64 `json:"water_liters"`
+	WasteHandling string  `json:"waste_handling"`
+}
+
 func New(database *gorm.DB, secret string) *Server {
 	if secret == "" {
 		secret = "development-secret"
@@ -132,10 +150,7 @@ func (s *Server) listHoldings(c *gin.Context) {
 	c.JSON(200, gin.H{"data": h, "page": 1, "page_size": len(h), "total": len(h)})
 }
 func (s *Server) createHolding(c *gin.Context) {
-	var in struct {
-		Type  string
-		Count int
-	}
+	var in holdingRequest
 	c.ShouldBindJSON(&in)
 	if in.Count <= 0 || !validType(in.Type) {
 		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "valid type and positive count required"}})
@@ -172,10 +187,7 @@ func (s *Server) deleteHolding(c *gin.Context) {
 	c.Status(204)
 }
 func (s *Server) createEntry(c *gin.Context) {
-	var in struct {
-		ClientID, HoldingID, PeriodStart, PeriodEnd, FeedType, EnergySource, WasteHandling string
-		FeedKg, EnergyKwh, WaterLiters                                                     float64
-	}
+	var in entryRequest
 	c.ShouldBindJSON(&in)
 	var h models.Holding
 	if s.DB.First(&h, "id = ? AND farmer_id = ?", in.HoldingID, s.farmerID(c)).Error != nil {

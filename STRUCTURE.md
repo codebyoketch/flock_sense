@@ -53,17 +53,26 @@ flocksense/
 │   ├── app.json
 │   └── package.json
 │
-├── web/                          # React (Vite) — dashboard
+├── web/                          # React (Vite) — farmer dashboard
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── Farmers.tsx
-│   │   │   ├── FarmerDetail.tsx  # shows holdings breakdown
-│   │   │   ├── Verifications.tsx
-│   │   │   ├── Benchmarking.tsx  # filterable by livestock type
-│   │   │   └── Badge.tsx
+│   │   │   ├── Login.tsx         # farmer login
+│   │   │   ├── Register.tsx      # farmer sign-up
+│   │   │   ├── Dashboard.tsx     # personal footprint overview, score, trends
+│   │   │   ├── Holdings.tsx      # list/manage own livestock holdings
+│   │   │   ├── HoldingDetail.tsx # per-holding entry history & breakdown
+│   │   │   ├── LogEntry.tsx      # log a new emissions entry
+│   │   │   ├── Verifications.tsx # entries pending/completed verification (own entries only)
+│   │   │   ├── Score.tsx         # sustainability scorecard & recommendations
+│   │   │   ├── Benchmarking.tsx  # compare own farm vs regional/peer averages, filterable by livestock type
+│   │   │   ├── Report.tsx        # generate/download shareable sustainability report
+│   │   │   ├── Profile.tsx       # farmer account & farm details
+│   │   │   └── Badge.tsx         # public, no auth required
 │   │   ├── components/
-│   │   ├── services/              # API client
+│   │   │   └── ProtectedRoute.tsx # route guard, redirects to /login if no valid session
+│   │   ├── services/
+│   │   │   ├── api.ts             # API client
+│   │   │   └── auth.ts            # token storage, login/logout, session check
 │   │   └── types/
 │   ├── index.html
 │   └── package.json

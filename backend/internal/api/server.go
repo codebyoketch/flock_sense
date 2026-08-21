@@ -136,7 +136,7 @@ func (s *Server) router() *gin.Engine {
 	a.GET("/footprint/me", s.Footprint.Me)
 	a.GET("/reports/me", s.Reports.Me)
 	a.GET("/scores/benchmark", s.Benchmarks.Me)
-	r.GET("/api/v1/badge/:id", s.badge)
+	r.GET("/api/v1/badge/:farmer_id", s.Badge.Public)
 	r.GET("/api/v1/ledger/:tx", s.Ledger.Proof)
 	return r
 }

@@ -37,7 +37,7 @@ func TestAuthRejectsUnexpectedAlgorithm(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{"farmer_id": "farmer-1"})
 	value, _ := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
 	r := gin.New()
-	r.Use(Auth(secret))
+	r.Use(Auth(secret, nil))
 	r.GET("/", func(c *gin.Context) { c.Status(http.StatusOK) })
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+value)

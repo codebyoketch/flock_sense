@@ -39,6 +39,7 @@ type Server struct {
 	Cooperative  *handlers.CooperativeHandler
 	Ledger       *handlers.LedgerHandler
 	Badge        *handlers.BadgeHandler
+	Revocations  *middleware.Revocations
 }
 
 type holdingRequest struct {
@@ -92,7 +93,7 @@ func New(database *gorm.DB, secret string) *Server {
 	badgeService := services.NewBadgeService(farmerRepository, ledgerRepository, scoreRepository)
 	badgeHandler := handlers.NewBadgeHandler(badgeService)
 	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService, verificationRepository)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService, revocations), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService), Ledger: ledgerHandler, Badge: badgeHandler}
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService, revocations), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService), Ledger: ledgerHandler, Badge: badgeHandler, Revocations: revocations}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -104,10 +105,10 @@ func (s *Server) router() *gin.Engine {
 	v.POST("/auth/admin/login", s.AdminAuth.Login)
 	v.POST("/auth/refresh", s.Auth.Refresh)
 	a := v.Group("/")
-	a.Use(middleware.Auth(s.Secret, revocations))
+	a.Use(middleware.Auth(s.Secret, s.Revocations))
 	a.Use(middleware.RequireRole("farmer"))
 	admin := v.Group("/")
-	admin.Use(middleware.Auth(s.Secret))
+	admin.Use(middleware.Auth(s.Secret, s.Revocations))
 	admin.Use(middleware.RequireRole("cooperative_admin"))
 	admin.GET("/cooperatives/:id/scores", s.Cooperative.Scores)
 	a.POST("/auth/logout", s.Auth.Logout)

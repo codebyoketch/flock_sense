@@ -4,10 +4,14 @@ import (
 	"github.com/flocksense/backend/internal/middleware"
 	"github.com/flocksense/backend/internal/services"
 	"github.com/gin-gonic/gin"
+	"strings"
 	"time"
 )
 
-type AuthHandler struct{ service *services.AuthService }
+type AuthHandler struct {
+	service     *services.AuthService
+	revocations *middleware.Revocations
+}
 
 func NewAuthHandler(service *services.AuthService, revocations *middleware.Revocations) *AuthHandler {
 	return &AuthHandler{service: service, revocations: revocations}

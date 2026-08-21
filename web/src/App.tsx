@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
 import Holdings from "./pages/Holdings";
 import HoldingDetail from "./pages/HoldingDetail";
 import LogEntry from "./pages/LogEntry";
@@ -21,6 +22,7 @@ function App() {
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/holdings" element={<Holdings />} />
           <Route path="/holding/:id" element={<HoldingDetail />} />
           <Route path="/log-entry" element={<LogEntry />} />

@@ -41,7 +41,7 @@ export default function Landing() {
   // Redirect authenticated users straight to the dashboard
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate('/holdings', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [navigate]);
 

@@ -28,8 +28,8 @@ type VerificationService struct {
 	pending      PendingEntryStore
 }
 
-func NewVerificationService(store VerificationStore, attestations AttestationStore, entries EntryStatusStore) *VerificationService {
-	return &VerificationService{store: store, attestations: attestations, entries: entries, pending: entries.(PendingEntryStore)}
+func NewVerificationService(store VerificationStore, attestations AttestationStore, entries EntryStatusStore, pending PendingEntryStore) *VerificationService {
+	return &VerificationService{store: store, attestations: attestations, entries: entries, pending: pending}
 }
 func (s *VerificationService) Reciprocity(farmerID string) (Reciprocity, error) {
 	given, err := s.store.CountGiven(farmerID)

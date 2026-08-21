@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"github.com/flocksense/backend/internal/emissions"
 	"github.com/flocksense/backend/internal/models"
 	"time"
@@ -90,7 +91,7 @@ func (s *EntryService) ListByFarmerStatus(farmerID, status string) ([]models.Ent
 func (s *EntryService) Get(farmerID, entryID string) (models.Entry, error) {
 	entry, err := s.entries.FindByID(entryID)
 	if err != nil || entry.FarmerID != farmerID {
-		return models.Entry{}, gorm.ErrRecordNotFound
+		return models.Entry{}, errors.New("entry not found")
 	}
 	return entry, nil
 }

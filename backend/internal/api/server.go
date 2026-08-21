@@ -77,7 +77,7 @@ func New(database *gorm.DB, secret string) *Server {
 	reportService := services.NewReportService(farmerRepository, entryRepository)
 	benchmarkService := services.NewBenchmarkService(holdingRepository, entryRepository)
 	verificationRepository := repositories.NewVerificationRepository(database)
-	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository)
+	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	farmerService := services.NewFarmerService(farmerRepository)
 	cooperativeRepository := repositories.NewCooperativeRepository(database)

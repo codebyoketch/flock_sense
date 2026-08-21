@@ -33,6 +33,7 @@ type Server struct {
 	Verification *handlers.VerificationHandler
 	Auth         *handlers.AuthHandler
 	Entries      *handlers.EntryHandler
+	Scores       *handlers.ScoreHandler
 }
 
 type holdingRequest struct {
@@ -73,7 +74,9 @@ func New(database *gorm.DB, secret string) *Server {
 	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	entryService := services.NewEntryService(holdingRepository, entryRepository)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService)}
+	scoreRepository := repositories.NewScoreRepository(database)
+	scoreService := services.NewScoreService(entryRepository, scoreRepository)
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -96,7 +99,7 @@ func (s *Server) router() *gin.Engine {
 	a.GET("/verifications/pending", s.pending)
 	a.POST("/verifications", s.Verification.Submit)
 	a.GET("/verifications/reciprocity", s.Verification.Reciprocity)
-	a.GET("/scores/me", s.score)
+	a.GET("/scores/me", s.Scores.Me)
 	a.POST("/calculations", s.Calculations.Calculate)
 	a.GET("/footprint/me", s.Footprint.Me)
 	a.GET("/reports/me", s.Reports.Me)

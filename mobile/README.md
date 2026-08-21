@@ -90,13 +90,13 @@ Log Entry writes to a local SQLite queue first (`src/storage/`) so it works with
 
 New pending verifications trigger a **local** notification (not remote push — see [Known limitations](#known-limitations) below). `src/services/notifications.ts` polls `/verifications/pending` every 60s while the app is open and foregrounded, diffs against what it's already notified about (persisted in AsyncStorage so you don't get renotified after a restart), and fires a local notification for anything new. Wired up in `app/_layout.tsx` once the farmer is authenticated.
 
-Local notifications work fine in Expo Go on both simulators/emulators and physical devices — no separate dev build needed for this feature.
+`expo-notifications` is loaded lazily behind a dynamic import rather than a normal top-level import. That's deliberate: **on Android, Expo Go removed even local-notification support in SDK 53+** (not just remote push — a static import throws at module load and crashes the app). Loading it lazily lets us catch that failure and disable just this feature, so the rest of the app keeps working in Expo Go. If you see a console warning about `expo-notifications` being unavailable, that's expected on Android/Expo Go — use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) to actually test this feature there. On iOS Simulator/device via Expo Go, and on Android via a dev build, it works normally.
 
 ---
 
 ## Known limitations
 
-- **Notifications are local-only, foreground-only.** They fire while the app is open, based on polling. There's no remote push — that would need a real backend capable of sending to Expo's push service, which doesn't exist yet against the mock backend. If/when the Go backend is live, this is the natural next step (register a push token, have the backend call Expo's push API when a new verification request is created).
+- **Notifications are local-only, foreground-only, and — on Android — require a dev build.** They fire while the app is open, based on polling. There's no remote push — that would need a real backend capable of sending to Expo's push service, which doesn't exist yet against the mock backend. Separately, Expo Go on Android (SDK 53+) doesn't support `expo-notifications` at all, even for local notifications, so this feature silently no-ops there (see "Notifications" above); it works fine in Expo Go on iOS, or on Android via a development build. If/when the Go backend is live, remote push is the natural next step (register a push token, have the backend call Expo's push API when a new verification request is created).
 - **No mock server is bundled here.** You need to point `apiBaseUrl` at something that implements `../API_CONTRACT.md`.
 - **Web dashboard and Go backend are out of scope for this folder** — see the root of the monorepo.
 

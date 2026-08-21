@@ -27,3 +27,10 @@ func (r *EntryRepository) FindByClientID(clientID string) (models.Entry, error) 
 	return entry, err
 }
 func (r *EntryRepository) Create(entry *models.Entry) error { return r.db.Create(entry).Error }
+
+func (r *EntryRepository) FindByID(id string) (models.Entry, error) {
+	var entry models.Entry
+	err := r.db.First(&entry, "id = ?", id).Error
+	return entry, err
+}
+func (r *EntryRepository) Save(entry *models.Entry) error { return r.db.Save(entry).Error }

@@ -70,7 +70,7 @@ func New(database *gorm.DB, secret string) *Server {
 	reportService := services.NewReportService(farmerRepository, entryRepository)
 	benchmarkService := services.NewBenchmarkService(holdingRepository, entryRepository)
 	verificationRepository := repositories.NewVerificationRepository(database)
-	verificationService := services.NewVerificationService(verificationRepository)
+	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	entryService := services.NewEntryService(holdingRepository, entryRepository)
 	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService)}
@@ -94,7 +94,7 @@ func (s *Server) router() *gin.Engine {
 	a.POST("/entries/sync", s.syncEntries)
 	a.GET("/holdings/:id/entries", s.listEntries)
 	a.GET("/verifications/pending", s.pending)
-	a.POST("/verifications", s.verify)
+	a.POST("/verifications", s.Verification.Submit)
 	a.GET("/verifications/reciprocity", s.Verification.Reciprocity)
 	a.GET("/scores/me", s.score)
 	a.POST("/calculations", s.Calculations.Calculate)

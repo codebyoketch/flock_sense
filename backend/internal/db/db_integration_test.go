@@ -36,8 +36,26 @@ func TestPostgresConnectionAndSchema(t *testing.T) {
 		t.Fatalf("pgcrypto extension is not enabled: %q", extension)
 	}
 
-	if err := database.AutoMigrate(&models.Farmer{}); err != nil {
+	if err := database.AutoMigrate(
+		&models.Farmer{},
+		&models.Admin{},
+		&models.Holding{},
+		&models.Entry{},
+		&models.Verification{},
+		&models.Score{},
+		&models.LedgerAnchor{},
+	); err != nil {
 		t.Fatal(err)
+	}
+
+	for _, table := range []string{"farmers", "admins", "holdings", "entries", "verifications", "scores", "ledger_anchors"} {
+		var exists bool
+		if err := database.Raw("SELECT to_regclass(?) IS NOT NULL", table).Scan(&exists).Error; err != nil {
+			t.Fatalf("check table %s: %v", table, err)
+		}
+		if !exists {
+			t.Fatalf("expected table %s to exist", table)
+		}
 	}
 
 	farmer := models.Farmer{

@@ -75,7 +75,9 @@ func New(database *gorm.DB, secret string) *Server {
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	entryService := services.NewEntryService(holdingRepository, entryRepository)
 	scoreRepository := repositories.NewScoreRepository(database)
-	scoreService := services.NewScoreService(entryRepository, scoreRepository)
+	ledgerRepository := repositories.NewLedgerRepository(database)
+	ledgerService := services.NewLedgerService(ledgerRepository, blockchain.MockClient{Chain: "mock-vechain"})
+	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService)
 	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }

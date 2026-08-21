@@ -14,10 +14,11 @@ type ScoreResult struct {
 type ScoreService struct {
 	entries EntryStore
 	scores  ScoreStore
+	ledger  *LedgerService
 }
 
-func NewScoreService(entries EntryStore, scores ScoreStore) *ScoreService {
-	return &ScoreService{entries: entries, scores: scores}
+func NewScoreService(entries EntryStore, scores ScoreStore, ledger *LedgerService) *ScoreService {
+	return &ScoreService{entries: entries, scores: scores, ledger: ledger}
 }
 func (s *ScoreService) ForFarmer(farmerID string) (ScoreResult, error) {
 	entries, err := s.entries.ListByFarmer(farmerID)
@@ -46,6 +47,11 @@ func (s *ScoreService) ForFarmer(farmerID string) (ScoreResult, error) {
 	score := models.Score{FarmerID: farmerID, Grade: grade, CO2ePerAnimal: total, ScoreActive: true, ComputedAt: time.Now()}
 	if err := s.scores.Save(&score); err != nil {
 		return ScoreResult{}, err
+	}
+	if score.ScoreActive {
+		if err := s.ledger.AnchorScore(farmerID, grade, total); err != nil {
+			return ScoreResult{}, err
+		}
 	}
 	return ScoreResult{Score: score, Recommendation: recommendations.For("feed", total)}, nil
 }

@@ -13,13 +13,18 @@ import (
 )
 
 const (
-	OTPValidity    = 5 * time.Minute
-	OTPMaxAttempts = 5
+	OTPValidity      = 5 * time.Minute
+	OTPMaxAttempts   = 5
+	OTPMaxRequests   = 5
+	OTPRequestWindow = time.Hour
 )
+
+var ErrOTPRateLimited = errors.New("otp request limit exceeded")
 
 type OTPStore interface {
 	Create(*models.OTPChallenge) error
 	FindByID(string) (models.OTPChallenge, error)
+	CountRecent(string, time.Time) (int64, error)
 	Save(*models.OTPChallenge) error
 }
 
@@ -33,6 +38,14 @@ func NewOTPService(store OTPStore) *OTPService {
 }
 
 func (s *OTPService) Request(phone string) (models.OTPChallenge, string, error) {
+	count, err := s.store.CountRecent(phone, s.now().Add(-OTPRequestWindow))
+	if err != nil {
+		return models.OTPChallenge{}, "", err
+	}
+	if count >= OTPMaxRequests {
+		return models.OTPChallenge{}, "", ErrOTPRateLimited
+	}
+
 	value, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
 		return models.OTPChallenge{}, "", err

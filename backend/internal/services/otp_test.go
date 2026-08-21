@@ -10,12 +10,17 @@ import (
 
 type fakeOTPStore struct {
 	challenge models.OTPChallenge
+	requests  int64
 }
 
 func (f *fakeOTPStore) Create(challenge *models.OTPChallenge) error {
 	challenge.ID = "challenge-1"
 	f.challenge = *challenge
 	return nil
+}
+
+func (f *fakeOTPStore) CountRecent(string, time.Time) (int64, error) {
+	return f.requests, nil
 }
 
 func (f *fakeOTPStore) FindByID(id string) (models.OTPChallenge, error) {
@@ -67,5 +72,13 @@ func TestOTPServiceLimitsInvalidAttempts(t *testing.T) {
 	}
 	if err := service.Verify(challenge.ID, challenge.Phone, "000000"); err == nil {
 		t.Fatal("expected attempt limit to be enforced")
+	}
+}
+
+func TestOTPServiceLimitsRequestsPerPhone(t *testing.T) {
+	store := &fakeOTPStore{requests: OTPMaxRequests}
+	service := NewOTPService(store)
+	if _, _, err := service.Request("+254700000001"); !errors.Is(err, ErrOTPRateLimited) {
+		t.Fatalf("expected rate limit error, got %v", err)
 	}
 }

@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+
 	"github.com/flocksense/backend/internal/middleware"
 	"github.com/flocksense/backend/internal/services"
 	"github.com/gin-gonic/gin"
@@ -45,6 +47,10 @@ func (h *AuthHandler) RequestOTP(c *gin.Context) {
 	}
 	challenge, code, err := h.otp.Request(input.Phone)
 	if err != nil {
+		if errors.Is(err, services.ErrOTPRateLimited) {
+			c.JSON(429, gin.H{"error": gin.H{"code": "OTP_RATE_LIMITED", "message": "too many OTP requests"}})
+			return
+		}
 		c.JSON(500, gin.H{"error": gin.H{"code": "OTP_UNAVAILABLE", "message": "unable to create OTP challenge"}})
 		return
 	}

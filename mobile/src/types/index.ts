@@ -99,3 +99,14 @@ export interface LedgerProof {
   scoreHash: string;
   attestationTrail: AttestationEntry[];
 }
+
+export interface VerificationHistoryItem {
+  verificationId: string;
+  direction: "given" | "received";
+  entryId: string;
+  holdingType: LivestockType;
+  counterpartyName: string; // who you verified, or who verified you
+  verdict: "confirm" | "flag";
+  note?: string;
+  createdAt: string;
+}

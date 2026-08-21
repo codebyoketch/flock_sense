@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, Pressable, Switch } from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Profile() {
   const { farmer, logout } = useAuth();
+  const router = useRouter();
   const [swahili, setSwahili] = useState(farmer?.language === "sw");
 
   return (
@@ -20,7 +22,7 @@ export default function Profile() {
         <Switch value={swahili} onValueChange={setSwahili} />
       </View>
 
-      <Pressable style={styles.row}>
+      <Pressable style={styles.row} onPress={() => router.push("/verification-history")}>
         <Text style={styles.rowLabel}>Verification history</Text>
         <Text style={styles.chevron}>›</Text>
       </Pressable>

@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "flocksense",
     "extra": {
-      "apiBaseUrl": "https://api.flocksense.app/api/v1",
+      "apiBaseUrl": "http://192.168.1.176:4000/api/v1",
       "webBaseUrl": "https://flocksense.app"
     },
     "ios": {

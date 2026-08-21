@@ -1,5 +1,5 @@
 import { apiRequest } from "./api";
-import type { PendingVerification, Reciprocity } from "@/types";
+import type { PendingVerification, Reciprocity, VerificationHistoryItem } from "@/types";
 
 export async function getPendingVerifications(): Promise<PendingVerification[]> {
   const res = await apiRequest<{ data: PendingVerification[] }>("/verifications/pending");
@@ -19,4 +19,10 @@ export async function submitVerification(
 
 export async function getReciprocity(): Promise<Reciprocity> {
   return apiRequest<Reciprocity>("/verifications/reciprocity");
+}
+
+/** Full history of verifications the farmer has given and received, newest first. */
+export async function getVerificationHistory(): Promise<VerificationHistoryItem[]> {
+  const res = await apiRequest<{ data: VerificationHistoryItem[] }>("/verifications/history");
+  return res.data;
 }

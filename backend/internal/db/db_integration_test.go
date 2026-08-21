@@ -39,6 +39,7 @@ func TestPostgresConnectionAndSchema(t *testing.T) {
 	if err := database.AutoMigrate(
 		&models.Farmer{},
 		&models.Admin{},
+		&models.OTPChallenge{},
 		&models.Holding{},
 		&models.Entry{},
 		&models.Verification{},
@@ -48,7 +49,7 @@ func TestPostgresConnectionAndSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, table := range []string{"farmers", "admins", "holdings", "entries", "verifications", "scores", "ledger_anchors"} {
+	for _, table := range []string{"farmers", "admins", "otp_challenges", "holdings", "entries", "verifications", "scores", "ledger_anchors"} {
 		var exists bool
 		if err := database.Raw("SELECT to_regclass(?) IS NOT NULL", table).Scan(&exists).Error; err != nil {
 			t.Fatalf("check table %s: %v", table, err)

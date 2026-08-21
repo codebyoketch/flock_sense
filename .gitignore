@@ -1,0 +1,6 @@
+backend/.env
+backend/bin/
+backend/tmp/
+*.test
+coverage.out
+.DS_Store

@@ -11,6 +11,7 @@ import (
 	"github.com/flocksense/backend/internal/blockchain"
 	"github.com/flocksense/backend/internal/emissions"
 	"github.com/flocksense/backend/internal/handlers"
+	"github.com/flocksense/backend/internal/middleware"
 	"github.com/flocksense/backend/internal/models"
 	"github.com/flocksense/backend/internal/recommendations"
 	"github.com/flocksense/backend/internal/repositories"
@@ -26,6 +27,12 @@ type Server struct {
 	Chain        blockchain.Client
 	Holdings     *handlers.HoldingHandler
 	Calculations *handlers.CalculationHandler
+	Footprint    *handlers.FootprintHandler
+	Reports      *handlers.ReportHandler
+	Benchmarks   *handlers.BenchmarkHandler
+	Verification *handlers.VerificationHandler
+	Auth         *handlers.AuthHandler
+	Entries      *handlers.EntryHandler
 }
 
 type holdingRequest struct {
@@ -57,34 +64,43 @@ func New(database *gorm.DB, secret string) *Server {
 	holdingRepository := repositories.NewHoldingRepository(database)
 	holdingService := services.NewHoldingService(holdingRepository)
 	calculationService := services.NewCalculationService()
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService)}
+	entryRepository := repositories.NewEntryRepository(database)
+	farmerRepository := repositories.NewFarmerRepository(database)
+	footprintService := services.NewFootprintService(entryRepository)
+	reportService := services.NewReportService(farmerRepository, entryRepository)
+	benchmarkService := services.NewBenchmarkService(holdingRepository, entryRepository)
+	verificationRepository := repositories.NewVerificationRepository(database)
+	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository)
+	authService := services.NewAuthService(farmerRepository, []byte(secret))
+	entryService := services.NewEntryService(holdingRepository, entryRepository)
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), Entries: handlers.NewEntryHandler(entryService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 	v := r.Group("/api/v1")
-	v.POST("/auth/register", s.register)
-	v.POST("/auth/login", s.login)
+	v.POST("/auth/register", s.Auth.Register)
+	v.POST("/auth/login", s.Auth.Login)
 	a := v.Group("/")
-	a.Use(s.auth())
+	a.Use(middleware.Auth(s.Secret))
 	a.GET("/farmers/me", s.me)
 	a.PATCH("/farmers/me", s.updateMe)
 	a.GET("/holdings", s.Holdings.List)
 	a.POST("/holdings", s.Holdings.Create)
 	a.PATCH("/holdings/:id", s.updateHolding)
 	a.DELETE("/holdings/:id", s.deleteHolding)
-	a.POST("/entries", s.createEntry)
+	a.POST("/entries", s.Entries.Create)
 	a.POST("/entries/sync", s.syncEntries)
 	a.GET("/holdings/:id/entries", s.listEntries)
 	a.GET("/verifications/pending", s.pending)
-	a.POST("/verifications", s.verify)
-	a.GET("/verifications/reciprocity", s.reciprocity)
+	a.POST("/verifications", s.Verification.Submit)
+	a.GET("/verifications/reciprocity", s.Verification.Reciprocity)
 	a.GET("/scores/me", s.score)
 	a.POST("/calculations", s.Calculations.Calculate)
-	a.GET("/footprint/me", s.footprint)
-	a.GET("/reports/me", s.report)
-	a.GET("/scores/benchmark", s.benchmark)
+	a.GET("/footprint/me", s.Footprint.Me)
+	a.GET("/reports/me", s.Reports.Me)
+	a.GET("/scores/benchmark", s.Benchmarks.Me)
 	r.GET("/api/v1/badge/:id", s.badge)
 	r.GET("/api/v1/ledger/:tx", s.ledger)
 	return r

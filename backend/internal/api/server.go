@@ -98,7 +98,7 @@ func (s *Server) router() *gin.Engine {
 	a.POST("/entries", s.Entries.Create)
 	a.POST("/entries/sync", s.Entries.Sync)
 	a.GET("/holdings/:id/entries", s.Entries.ListByHolding)
-	a.GET("/verifications/pending", s.pending)
+	a.GET("/verifications/pending", s.Verification.Pending)
 	a.POST("/verifications", s.Verification.Submit)
 	a.GET("/verifications/reciprocity", s.Verification.Reciprocity)
 	a.GET("/scores/me", s.Scores.Me)

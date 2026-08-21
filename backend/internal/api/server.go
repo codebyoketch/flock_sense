@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -83,7 +84,12 @@ func (s *Server) router() *gin.Engine {
 func (s *Server) auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
-		t, err := jwt.Parse(h, func(t *jwt.Token) (any, error) { return s.Secret, nil })
+		t, err := jwt.Parse(h, func(t *jwt.Token) (any, error) {
+			if t.Method != jwt.SigningMethodHS256 {
+				return nil, fmt.Errorf("unexpected signing method")
+			}
+			return s.Secret, nil
+		})
 		if err != nil || !t.Valid {
 			c.AbortWithStatusJSON(401, gin.H{"error": gin.H{"code": "UNAUTHORIZED", "message": "valid bearer token required"}})
 			return
@@ -93,7 +99,12 @@ func (s *Server) auth() gin.HandlerFunc {
 			c.AbortWithStatus(401)
 			return
 		}
-		c.Set("farmer_id", claims["farmer_id"])
+		farmerID, ok := claims["farmer_id"].(string)
+		if !ok || farmerID == "" {
+			c.AbortWithStatusJSON(401, gin.H{"error": gin.H{"code": "UNAUTHORIZED", "message": "token identity is missing"}})
+			return
+		}
+		c.Set("farmer_id", farmerID)
 		c.Next()
 	}
 }

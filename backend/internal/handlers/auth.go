@@ -61,6 +61,30 @@ func (h *AuthHandler) RequestOTP(c *gin.Context) {
 	c.JSON(201, response)
 }
 
+func (h *AuthHandler) RegisterWithOTP(c *gin.Context) {
+	var input struct {
+		ChallengeID   string `json:"challenge_id"`
+		Phone         string `json:"phone"`
+		Code          string `json:"code"`
+		Name          string `json:"name"`
+		CooperativeID string `json:"cooperative_id"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.ChallengeID == "" || input.Phone == "" || input.Code == "" || input.Name == "" {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "challenge_id, phone, code and name are required"}})
+		return
+	}
+	if err := h.otp.Verify(input.ChallengeID, input.Phone, input.Code); err != nil {
+		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_OTP", "message": "OTP is invalid or expired"}})
+		return
+	}
+	farmer, token, err := h.service.Register(input.Name, input.Phone, input.CooperativeID)
+	if err != nil {
+		c.JSON(409, gin.H{"error": gin.H{"code": "PHONE_EXISTS", "message": "phone already registered"}})
+		return
+	}
+	c.JSON(201, gin.H{"farmer_id": farmer.ID, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
+}
+
 func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 	var input struct {
 		ChallengeID string `json:"challenge_id"`

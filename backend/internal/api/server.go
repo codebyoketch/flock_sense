@@ -105,6 +105,7 @@ func (s *Server) router() *gin.Engine {
 	v.POST("/auth/register", s.Auth.Register)
 	v.POST("/auth/login", s.Auth.Login)
 	v.POST("/auth/otp/request", s.Auth.RequestOTP)
+	v.POST("/auth/otp/register", s.Auth.RegisterWithOTP)
 	v.POST("/auth/otp/verify", s.Auth.VerifyOTP)
 	v.POST("/auth/admin/login", s.AdminAuth.Login)
 	v.POST("/auth/refresh", s.Auth.Refresh)

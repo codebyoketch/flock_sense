@@ -32,8 +32,8 @@ func (s *LedgerService) AnchorScore(farmerID, grade string, total float64, trail
 	if err != nil {
 		return err
 	}
-	trail, _ := json.Marshal(anchor.AttestationTrail)
-	return s.store.Create(&models.LedgerAnchor{FarmerID: farmerID, TxID: anchor.TxID, ScoreHash: anchor.ScoreHash, Chain: anchor.Chain, AttestationTrail: string(trail), AnchoredAt: anchor.AnchoredAt})
+	encodedTrail, _ := json.Marshal(trail)
+	return s.store.Create(&models.LedgerAnchor{FarmerID: farmerID, TxID: anchor.TxID, ScoreHash: anchor.ScoreHash, Chain: anchor.Chain, AttestationTrail: string(encodedTrail), AnchoredAt: anchor.AnchoredAt})
 }
 
 func (s *LedgerService) Proof(txID string) (models.LedgerAnchor, error) {

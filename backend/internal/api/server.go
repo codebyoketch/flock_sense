@@ -68,6 +68,14 @@ func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
+	r.GET("/ready", func(c *gin.Context) {
+		sqlDB, err := s.DB.DB()
+		if err != nil || sqlDB.Ping() != nil {
+			c.JSON(503, gin.H{"status": "not_ready", "database": "unavailable"})
+			return
+		}
+		c.JSON(200, gin.H{"status": "ready", "database": "ok"})
+	})
 	v := r.Group("/api/v1")
 	v.POST("/auth/register", s.Auth.Register)
 	v.POST("/auth/login", s.Auth.Login)

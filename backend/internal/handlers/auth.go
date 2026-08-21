@@ -66,10 +66,15 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		return
 	}
 	if err := h.otp.Verify(input.ChallengeID, input.Phone, input.Code); err != nil {
-		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_OTP", "message": err.Error()}})
+		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_OTP", "message": "OTP is invalid or expired"}})
 		return
 	}
-	c.JSON(200, gin.H{"verified": true})
+	farmer, token, err := h.service.Login(input.Phone)
+	if err != nil {
+		c.JSON(200, gin.H{"verified": true})
+		return
+	}
+	c.JSON(200, gin.H{"verified": true, "farmer_id": farmer.ID, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {

@@ -35,3 +35,12 @@ func (h *VerificationHandler) Submit(c *gin.Context) {
 	}
 	c.JSON(201, verification)
 }
+
+func (h *VerificationHandler) Pending(c *gin.Context) {
+	entries, err := h.service.Pending(c.GetString("farmer_id"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": gin.H{"code": "DATABASE_ERROR", "message": "could not load pending verifications"}})
+		return
+	}
+	c.JSON(200, gin.H{"data": entries, "page": 1, "page_size": len(entries), "total": len(entries)})
+}

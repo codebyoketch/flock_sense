@@ -33,7 +33,7 @@ func (s *AuthService) Login(phone string) (models.Farmer, string, error) {
 	return farmer, s.issueToken(farmer.ID), nil
 }
 func (s *AuthService) issueToken(farmerID string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"farmer_id": farmerID, "exp": time.Now().Add(24 * time.Hour).Unix()})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"farmer_id": farmerID, "role": "farmer", "exp": time.Now().Add(24 * time.Hour).Unix()})
 	value, _ := token.SignedString(s.secret)
 	return value
 }

@@ -26,12 +26,27 @@ func Auth(secret []byte) gin.HandlerFunc {
 			c.AbortWithStatus(401)
 			return
 		}
-		farmerID, ok := claims["farmer_id"].(string)
-		if !ok || farmerID == "" {
+		if farmerID, ok := claims["farmer_id"].(string); ok && farmerID != "" {
+			c.Set("farmer_id", farmerID)
+			c.Set("role", "farmer")
+		} else if userID, ok := claims["user_id"].(string); ok && userID != "" {
+			c.Set("user_id", userID)
+			c.Set("role", claims["role"])
+			c.Set("cooperative_id", claims["cooperative_id"])
+		} else {
 			c.AbortWithStatusJSON(401, gin.H{"error": gin.H{"code": "UNAUTHORIZED", "message": "token identity is missing"}})
 			return
 		}
-		c.Set("farmer_id", farmerID)
+		c.Next()
+	}
+}
+
+func RequireRole(role string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetString("role") != role {
+			c.AbortWithStatusJSON(403, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "insufficient role"}})
+			return
+		}
 		c.Next()
 	}
 }

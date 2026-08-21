@@ -43,3 +43,25 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"farmer_id": farmer.ID, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
 }
+
+type AdminAuthHandler struct{ service *services.AdminAuthService }
+
+func NewAdminAuthHandler(service *services.AdminAuthService) *AdminAuthHandler {
+	return &AdminAuthHandler{service: service}
+}
+func (h *AdminAuthHandler) Login(c *gin.Context) {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.Email == "" || input.Password == "" {
+		c.Status(400)
+		return
+	}
+	admin, token, err := h.service.Login(input.Email, input.Password)
+	if err != nil {
+		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_LOGIN", "message": "invalid admin credentials"}})
+		return
+	}
+	c.JSON(200, gin.H{"user_id": admin.ID, "cooperative_id": admin.CooperativeID, "role": admin.Role, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
+}

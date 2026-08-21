@@ -23,3 +23,9 @@ func (r *VerificationRepository) CountConfirmations(entryID string) (int64, erro
 	err := r.db.Model(&models.Verification{}).Where("entry_id = ? AND verdict = ?", entryID, "confirm").Count(&count).Error
 	return count, err
 }
+
+func (r *VerificationRepository) ListByEntry(entryID string) ([]models.Verification, error) {
+	var items []models.Verification
+	err := r.db.Where("entry_id = ?", entryID).Order("created_at ASC").Find(&items).Error
+	return items, err
+}

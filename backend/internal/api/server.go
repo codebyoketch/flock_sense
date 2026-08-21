@@ -88,7 +88,7 @@ func New(database *gorm.DB, secret string) *Server {
 	ledgerRepository := repositories.NewLedgerRepository(database)
 	ledgerService := services.NewLedgerService(ledgerRepository, blockchain.MockClient{Chain: "mock-vechain"})
 	ledgerHandler := handlers.NewLedgerHandler(ledgerService)
-	badgeService := services.NewBadgeService(farmerRepository, ledgerRepository)
+	badgeService := services.NewBadgeService(farmerRepository, ledgerRepository, scoreRepository)
 	badgeHandler := handlers.NewBadgeHandler(badgeService)
 	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService)
 	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService), Ledger: ledgerHandler, Badge: badgeHandler}

@@ -52,3 +52,15 @@ func TestEntryServiceRejectsInvalidOwner(t *testing.T) {
 		t.Fatal("expected ownership validation error")
 	}
 }
+
+func (f *fakeEntryStore) FindByID(id string) (models.Entry, error) {
+	for _, e := range f.entries {
+		if e.ID == id {
+			return e, nil
+		}
+	}
+	return models.Entry{}, errors.New("not found")
+}
+func (f *fakeEntryStore) ListByFarmerStatus(string, string) ([]models.Entry, error) {
+	return f.entries, nil
+}

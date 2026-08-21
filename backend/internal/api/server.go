@@ -79,6 +79,8 @@ func New(database *gorm.DB, secret string) *Server {
 	verificationRepository := repositories.NewVerificationRepository(database)
 	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
+	otpRepository := repositories.NewOTPRepository(database)
+	otpService := services.NewOTPService(otpRepository)
 	farmerService := services.NewFarmerService(farmerRepository)
 	cooperativeRepository := repositories.NewCooperativeRepository(database)
 	cooperativeService := services.NewCooperativeService(cooperativeRepository)
@@ -93,7 +95,7 @@ func New(database *gorm.DB, secret string) *Server {
 	badgeService := services.NewBadgeService(farmerRepository, ledgerRepository, scoreRepository)
 	badgeHandler := handlers.NewBadgeHandler(badgeService)
 	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService, verificationRepository)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService, revocations), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService), Ledger: ledgerHandler, Badge: badgeHandler, Revocations: revocations}
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService, otpService, revocations), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService), Ledger: ledgerHandler, Badge: badgeHandler, Revocations: revocations}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -102,6 +104,8 @@ func (s *Server) router() *gin.Engine {
 	v := r.Group("/api/v1")
 	v.POST("/auth/register", s.Auth.Register)
 	v.POST("/auth/login", s.Auth.Login)
+	v.POST("/auth/otp/request", s.Auth.RequestOTP)
+	v.POST("/auth/otp/verify", s.Auth.VerifyOTP)
 	v.POST("/auth/admin/login", s.AdminAuth.Login)
 	v.POST("/auth/refresh", s.Auth.Refresh)
 	a := v.Group("/")

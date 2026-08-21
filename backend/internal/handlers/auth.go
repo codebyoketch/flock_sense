@@ -4,17 +4,19 @@ import (
 	"github.com/flocksense/backend/internal/middleware"
 	"github.com/flocksense/backend/internal/services"
 	"github.com/gin-gonic/gin"
+	"os"
 	"strings"
 	"time"
 )
 
 type AuthHandler struct {
 	service     *services.AuthService
+	otp         *services.OTPService
 	revocations *middleware.Revocations
 }
 
-func NewAuthHandler(service *services.AuthService, revocations *middleware.Revocations) *AuthHandler {
-	return &AuthHandler{service: service, revocations: revocations}
+func NewAuthHandler(service *services.AuthService, otp *services.OTPService, revocations *middleware.Revocations) *AuthHandler {
+	return &AuthHandler{service: service, otp: otp, revocations: revocations}
 }
 func (h *AuthHandler) Register(c *gin.Context) {
 	var input struct {
@@ -33,6 +35,43 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 	c.JSON(201, gin.H{"farmer_id": farmer.ID, "token": token, "expires_at": time.Now().Add(24 * time.Hour)})
 }
+func (h *AuthHandler) RequestOTP(c *gin.Context) {
+	var input struct {
+		Phone string `json:"phone"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.Phone == "" {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "phone is required"}})
+		return
+	}
+	challenge, code, err := h.otp.Request(input.Phone)
+	if err != nil {
+		c.JSON(500, gin.H{"error": gin.H{"code": "OTP_UNAVAILABLE", "message": "unable to create OTP challenge"}})
+		return
+	}
+	response := gin.H{"challenge_id": challenge.ID, "expires_at": challenge.ExpiresAt}
+	if env := os.Getenv("APP_ENV"); env == "development" || env == "test" {
+		response["dev_code"] = code
+	}
+	c.JSON(201, response)
+}
+
+func (h *AuthHandler) VerifyOTP(c *gin.Context) {
+	var input struct {
+		ChallengeID string `json:"challenge_id"`
+		Phone       string `json:"phone"`
+		Code        string `json:"code"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.ChallengeID == "" || input.Phone == "" || input.Code == "" {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "challenge_id, phone and code are required"}})
+		return
+	}
+	if err := h.otp.Verify(input.ChallengeID, input.Phone, input.Code); err != nil {
+		c.JSON(401, gin.H{"error": gin.H{"code": "INVALID_OTP", "message": err.Error()}})
+		return
+	}
+	c.JSON(200, gin.H{"verified": true})
+}
+
 func (h *AuthHandler) Login(c *gin.Context) {
 	var input struct {
 		Phone string `json:"phone"`

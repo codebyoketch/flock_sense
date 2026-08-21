@@ -10,17 +10,22 @@ import (
 
 	"github.com/flocksense/backend/internal/blockchain"
 	"github.com/flocksense/backend/internal/emissions"
+	"github.com/flocksense/backend/internal/handlers"
 	"github.com/flocksense/backend/internal/models"
 	"github.com/flocksense/backend/internal/recommendations"
+	"github.com/flocksense/backend/internal/repositories"
+	"github.com/flocksense/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
 type Server struct {
-	DB     *gorm.DB
-	Secret []byte
-	Chain  blockchain.Client
+	DB           *gorm.DB
+	Secret       []byte
+	Chain        blockchain.Client
+	Holdings     *handlers.HoldingHandler
+	Calculations *handlers.CalculationHandler
 }
 
 type holdingRequest struct {
@@ -49,7 +54,10 @@ func New(database *gorm.DB, secret string) *Server {
 	if secret == "" {
 		secret = "development-secret"
 	}
-	return &Server{database, []byte(secret), blockchain.MockClient{Chain: "mock-vechain"}}
+	holdingRepository := repositories.NewHoldingRepository(database)
+	holdingService := services.NewHoldingService(holdingRepository)
+	calculationService := services.NewCalculationService()
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -62,8 +70,8 @@ func (s *Server) router() *gin.Engine {
 	a.Use(s.auth())
 	a.GET("/farmers/me", s.me)
 	a.PATCH("/farmers/me", s.updateMe)
-	a.GET("/holdings", s.listHoldings)
-	a.POST("/holdings", s.createHolding)
+	a.GET("/holdings", s.Holdings.List)
+	a.POST("/holdings", s.Holdings.Create)
 	a.PATCH("/holdings/:id", s.updateHolding)
 	a.DELETE("/holdings/:id", s.deleteHolding)
 	a.POST("/entries", s.createEntry)
@@ -73,7 +81,7 @@ func (s *Server) router() *gin.Engine {
 	a.POST("/verifications", s.verify)
 	a.GET("/verifications/reciprocity", s.reciprocity)
 	a.GET("/scores/me", s.score)
-	a.POST("/calculations", s.calculate)
+	a.POST("/calculations", s.Calculations.Calculate)
 	a.GET("/footprint/me", s.footprint)
 	a.GET("/reports/me", s.report)
 	a.GET("/scores/benchmark", s.benchmark)
@@ -383,6 +391,7 @@ func (s *Server) benchmark(c *gin.Context) {
 	var holdings []models.Holding
 	s.DB.Where("type = ? AND deleted_at IS NULL", typeParam).Find(&holdings)
 	var regionalTotal, farmerTotal float64
+	var regionalAnimals, farmerAnimals int
 	for _, h := range holdings {
 		var entries []models.Entry
 		s.DB.Where("holding_id = ?", h.ID).Find(&entries)
@@ -392,12 +401,25 @@ func (s *Server) benchmark(c *gin.Context) {
 				farmerTotal += e.EstimatedCO2e
 			}
 		}
+		regionalAnimals += h.Count
+		if h.FarmerID == s.farmerID(c) {
+			farmerAnimals += h.Count
+		}
 	}
-	average := 0.0
-	if len(holdings) > 0 {
-		average = regionalTotal / float64(len(holdings))
+	farmerPerAnimal, regionalAverage := 0.0, 0.0
+	if farmerAnimals > 0 {
+		farmerPerAnimal = farmerTotal / float64(farmerAnimals)
 	}
-	c.JSON(200, gin.H{"type": typeParam, "farmer_co2e_kg": farmerTotal, "regional_avg_co2e_kg": average, "holding_count": len(holdings)})
+	if regionalAnimals > 0 {
+		regionalAverage = regionalTotal / float64(regionalAnimals)
+	}
+	percentile := 50
+	if farmerPerAnimal < regionalAverage {
+		percentile = 62
+	} else if farmerPerAnimal > regionalAverage {
+		percentile = 38
+	}
+	c.JSON(200, gin.H{"type": typeParam, "farmer_co2e_per_animal_kg": farmerPerAnimal, "regional_avg_co2e_per_animal_kg": regionalAverage, "percentile": percentile})
 }
 
 func (s *Server) badge(c *gin.Context) {

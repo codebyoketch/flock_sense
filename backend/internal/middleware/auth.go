@@ -8,9 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func Auth(secret []byte) gin.HandlerFunc {
+func Auth(secret []byte, revocations *Revocations) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+		if revocations != nil && revocations.IsRevoked(header) {
+			c.AbortWithStatusJSON(401, gin.H{"error": gin.H{"code": "TOKEN_REVOKED", "message": "token has been revoked"}})
+			return
+		}
 		token, err := jwt.Parse(header, func(t *jwt.Token) (any, error) {
 			if t.Method != jwt.SigningMethodHS256 {
 				return nil, fmt.Errorf("unexpected signing method")

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/flocksense/backend/internal/middleware"
 	"github.com/flocksense/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -8,8 +9,8 @@ import (
 
 type AuthHandler struct{ service *services.AuthService }
 
-func NewAuthHandler(service *services.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+func NewAuthHandler(service *services.AuthService, revocations *middleware.Revocations) *AuthHandler {
+	return &AuthHandler{service: service, revocations: revocations}
 }
 func (h *AuthHandler) Register(c *gin.Context) {
 	var input struct {
@@ -86,4 +87,9 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"token": token, "expires_at": time.Now().Add(24 * time.Hour)})
 }
-func (h *AuthHandler) Logout(c *gin.Context) { c.Status(204) }
+func (h *AuthHandler) Logout(c *gin.Context) {
+	if h.revocations != nil {
+		h.revocations.Revoke(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
+	}
+	c.Status(204)
+}

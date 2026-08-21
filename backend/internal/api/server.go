@@ -116,6 +116,7 @@ func (s *Server) router() *gin.Engine {
 	a.DELETE("/holdings/:id", s.Holdings.Delete)
 	a.POST("/entries", s.Entries.Create)
 	a.POST("/entries/sync", s.Entries.Sync)
+	a.GET("/entries/:entry_id", s.Entries.Get)
 	a.GET("/holdings/:id/entries", s.Entries.ListByHolding)
 	a.GET("/verifications/pending", s.Verification.Pending)
 	a.POST("/verifications", s.Verification.Submit)

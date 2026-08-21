@@ -44,3 +44,12 @@ func (h *EntryHandler) ListByHolding(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"data": entries, "page": 1, "page_size": len(entries), "total": len(entries)})
 }
+
+func (h *EntryHandler) Get(c *gin.Context) {
+	entry, err := h.service.Get(c.GetString("farmer_id"), c.Param("entry_id"))
+	if err != nil {
+		c.Status(404)
+		return
+	}
+	c.JSON(200, entry)
+}

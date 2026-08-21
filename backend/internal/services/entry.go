@@ -81,6 +81,16 @@ func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
 	return results
 }
 
+func (s *EntryService) Get(farmerID, entryID string) (models.Entry, error) {
+	entry, err := s.entries.(interface {
+		FindByID(string) (models.Entry, error)
+	}).FindByID(entryID)
+	if err != nil || entry.FarmerID != farmerID {
+		return models.Entry{}, gorm.ErrRecordNotFound
+	}
+	return entry, nil
+}
+
 func (s *EntryService) ListByHolding(farmerID, holdingID string) ([]models.Entry, error) {
 	if _, err := s.holdings.FindOwned(holdingID, farmerID); err != nil {
 		return nil, err

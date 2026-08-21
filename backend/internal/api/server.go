@@ -26,6 +26,7 @@ type Server struct {
 	Chain        blockchain.Client
 	Holdings     *handlers.HoldingHandler
 	Calculations *handlers.CalculationHandler
+	Footprint    *handlers.FootprintHandler
 }
 
 type holdingRequest struct {
@@ -57,7 +58,9 @@ func New(database *gorm.DB, secret string) *Server {
 	holdingRepository := repositories.NewHoldingRepository(database)
 	holdingService := services.NewHoldingService(holdingRepository)
 	calculationService := services.NewCalculationService()
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService)}
+	entryRepository := repositories.NewEntryRepository(database)
+	footprintService := services.NewFootprintService(entryRepository)
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -82,7 +85,7 @@ func (s *Server) router() *gin.Engine {
 	a.GET("/verifications/reciprocity", s.reciprocity)
 	a.GET("/scores/me", s.score)
 	a.POST("/calculations", s.Calculations.Calculate)
-	a.GET("/footprint/me", s.footprint)
+	a.GET("/footprint/me", s.Footprint.Me)
 	a.GET("/reports/me", s.report)
 	a.GET("/scores/benchmark", s.benchmark)
 	r.GET("/api/v1/badge/:id", s.badge)

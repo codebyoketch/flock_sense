@@ -12,6 +12,9 @@ type ScoreStore interface{ Save(*models.Score) error }
 type VerificationHistory interface {
 	ListByEntry(entryID string) ([]models.Verification, error)
 }
+type ReciprocityStore interface {
+	CountGiven(verifierID string) (int64, error)
+}
 type ScoreResult struct {
 	Score          models.Score
 	Recommendation recommendations.Recommendation
@@ -21,10 +24,11 @@ type ScoreService struct {
 	scores        ScoreStore
 	ledger        *LedgerService
 	verifications VerificationHistory
+	reciprocity   ReciprocityStore
 }
 
-func NewScoreService(entries EntryStore, scores ScoreStore, ledger *LedgerService, verifications VerificationHistory) *ScoreService {
-	return &ScoreService{entries: entries, scores: scores, ledger: ledger, verifications: verifications}
+func NewScoreService(entries EntryStore, scores ScoreStore, ledger *LedgerService, verifications VerificationHistory, reciprocity ReciprocityStore) *ScoreService {
+	return &ScoreService{entries: entries, scores: scores, ledger: ledger, verifications: verifications, reciprocity: reciprocity}
 }
 func (s *ScoreService) ForFarmer(farmerID string) (ScoreResult, error) {
 	entries, err := s.entries.ListByFarmer(farmerID)
@@ -50,7 +54,11 @@ func (s *ScoreService) ForFarmer(farmerID string) (ScoreResult, error) {
 	if total > 1000 {
 		grade = "E"
 	}
-	score := models.Score{FarmerID: farmerID, Grade: grade, CO2ePerAnimal: total, ScoreActive: true, ComputedAt: time.Now()}
+	given, err := s.reciprocity.CountGiven(farmerID)
+	if err != nil {
+		return ScoreResult{}, err
+	}
+	score := models.Score{FarmerID: farmerID, Grade: grade, CO2ePerAnimal: total, ScoreActive: given >= 2, ComputedAt: time.Now()}
 	if err := s.scores.Save(&score); err != nil {
 		return ScoreResult{}, err
 	}

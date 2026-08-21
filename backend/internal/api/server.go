@@ -45,7 +45,6 @@ func New(database *gorm.DB, secret string) *Server {
 	reportService := services.NewReportService(farmerRepository, entryRepository)
 	benchmarkService := services.NewBenchmarkService(holdingRepository, entryRepository)
 	verificationRepository := repositories.NewVerificationRepository(database)
-	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository, entryRepository)
 	authService := services.NewAuthService(farmerRepository, []byte(secret))
 	otpRepository := repositories.NewOTPRepository(database)
 	otpService := services.NewOTPService(otpRepository)
@@ -67,7 +66,8 @@ func New(database *gorm.DB, secret string) *Server {
 	ledgerHandler := handlers.NewLedgerHandler(ledgerService)
 	badgeService := services.NewBadgeService(farmerRepository, ledgerRepository, scoreRepository)
 	badgeHandler := handlers.NewBadgeHandler(badgeService)
-	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService, verificationRepository)
+	scoreService := services.NewScoreService(entryRepository, scoreRepository, ledgerService, verificationRepository, verificationRepository)
+	verificationService := services.NewVerificationService(verificationRepository, verificationRepository, entryRepository, entryRepository, scoreService)
 	return &Server{DB: database, Secret: []byte(secret), Chain: chainClient, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService), Footprint: handlers.NewFootprintHandler(footprintService), Reports: handlers.NewReportHandler(reportService), Benchmarks: handlers.NewBenchmarkHandler(benchmarkService), Verification: handlers.NewVerificationHandler(verificationService), Auth: handlers.NewAuthHandler(authService, otpService, revocations), AdminAuth: handlers.NewAdminAuthHandler(adminAuthService), Entries: handlers.NewEntryHandler(entryService), Scores: handlers.NewScoreHandler(scoreService), Farmer: handlers.NewFarmerHandler(farmerService), Cooperative: handlers.NewCooperativeHandler(cooperativeService), Ledger: ledgerHandler, Badge: badgeHandler, Revocations: revocations}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }

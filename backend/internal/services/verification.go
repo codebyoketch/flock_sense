@@ -16,6 +16,9 @@ type EntryStatusStore interface {
 type PendingEntryStore interface {
 	ListPendingExcept(farmerID string) ([]models.Entry, error)
 }
+type ScoreRefresher interface {
+	ForFarmer(farmerID string) (ScoreResult, error)
+}
 type Reciprocity struct {
 	Given       int64
 	Owed        int64
@@ -26,10 +29,11 @@ type VerificationService struct {
 	attestations AttestationStore
 	entries      EntryStatusStore
 	pending      PendingEntryStore
+	scores       ScoreRefresher
 }
 
-func NewVerificationService(store VerificationStore, attestations AttestationStore, entries EntryStatusStore, pending PendingEntryStore) *VerificationService {
-	return &VerificationService{store: store, attestations: attestations, entries: entries, pending: pending}
+func NewVerificationService(store VerificationStore, attestations AttestationStore, entries EntryStatusStore, pending PendingEntryStore, scores ScoreRefresher) *VerificationService {
+	return &VerificationService{store: store, attestations: attestations, entries: entries, pending: pending, scores: scores}
 }
 func (s *VerificationService) Reciprocity(farmerID string) (Reciprocity, error) {
 	given, err := s.store.CountGiven(farmerID)
@@ -60,6 +64,11 @@ func (s *VerificationService) Submit(entryID, verifierID, verdict, note string) 
 	}
 	if err := s.entries.Save(&entry); err != nil {
 		return models.Verification{}, err
+	}
+	if entry.Status == "verified" && s.scores != nil {
+		if _, err := s.scores.ForFarmer(entry.FarmerID); err != nil {
+			return models.Verification{}, err
+		}
 	}
 	return verification, nil
 }

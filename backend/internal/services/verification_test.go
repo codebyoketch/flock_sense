@@ -27,7 +27,7 @@ func (f *fakeEntryStatusStore) Save(entry *models.Entry) error        { f.entry 
 func TestVerificationServiceMarksEntryVerifiedAfterTwoConfirms(t *testing.T) {
 	verifications := &fakeVerificationStore{confirmations: 2}
 	entries := &fakeEntryStatusStore{entry: models.Entry{ID: "entry-1", FarmerID: "farmer-1", Status: "pending_verification"}}
-	service := NewVerificationService(verifications, verifications, entries, nil)
+	service := NewVerificationService(verifications, verifications, entries, nil, nil)
 	if _, err := service.Submit("entry-1", "farmer-2", "confirm", ""); err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestVerificationServiceMarksEntryVerifiedAfterTwoConfirms(t *testing.T) {
 func TestVerificationServiceFlagsEntry(t *testing.T) {
 	verifications := &fakeVerificationStore{}
 	entries := &fakeEntryStatusStore{entry: models.Entry{ID: "entry-1", FarmerID: "farmer-1", Status: "pending_verification"}}
-	service := NewVerificationService(verifications, verifications, entries, nil)
+	service := NewVerificationService(verifications, verifications, entries, nil, nil)
 	if _, err := service.Submit("entry-1", "farmer-2", "flag", "looks implausible"); err != nil {
 		t.Fatal(err)
 	}

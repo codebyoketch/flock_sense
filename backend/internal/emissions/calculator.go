@@ -1,5 +1,14 @@
 package emissions
 
+type Request struct {
+	HoldingType   string  `json:"holding_type"`
+	EnergySource  string  `json:"energy_source"`
+	WasteHandling string  `json:"waste_handling"`
+	FeedKg        float64 `json:"feed_kg"`
+	EnergyKwh     float64 `json:"energy_kwh"`
+	WaterLiters   float64 `json:"water_liters"`
+}
+
 type Input struct {
 	HoldingType, EnergySource, WasteHandling string
 	FeedKg, EnergyKwh, WaterLiters           float64

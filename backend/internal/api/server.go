@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -274,14 +275,19 @@ func (s *Server) score(c *gin.Context) {
 	}
 	sum := models.Score{FarmerID: s.farmerID(c), Grade: grade, CO2ePerAnimal: total, ScoreActive: true, ComputedAt: time.Now()}
 	s.DB.Where("farmer_id = ?", sum.FarmerID).Assign(sum).FirstOrCreate(&sum)
+	var existing models.LedgerAnchor
+	if s.DB.Where("farmer_id = ?", sum.FarmerID).First(&existing).Error != nil && sum.ScoreActive {
+		scoreHash := hash(sum.FarmerID + ":" + grade + ":" + fmt.Sprintf("%.4f", total))
+		anchor, err := s.Chain.AnchorScore(scoreHash, []map[string]any{})
+		if err == nil {
+			s.DB.Create(&models.LedgerAnchor{FarmerID: sum.FarmerID, TxID: anchor.TxID, ScoreHash: anchor.ScoreHash, Chain: anchor.Chain, AttestationTrail: "[]", AnchoredAt: anchor.AnchoredAt})
+		}
+	}
 	c.JSON(200, gin.H{"farmer_id": sum.FarmerID, "overall_score": grade, "computed_at": sum.ComputedAt, "recommendation": recommendations.For("feed", total)})
 }
 
 func (s *Server) calculate(c *gin.Context) {
-	var in struct {
-		HoldingType, EnergySource, WasteHandling string
-		FeedKg, EnergyKwh, WaterLiters           float64
-	}
+	var in emissions.Request
 	if c.ShouldBindJSON(&in) != nil || !validType(in.HoldingType) {
 		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "valid holding type and measurements are required"}})
 		return

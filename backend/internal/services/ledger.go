@@ -11,6 +11,7 @@ import (
 
 type LedgerStore interface {
 	FindByFarmer(farmerID string) (models.LedgerAnchor, error)
+	FindByTxID(txID string) (models.LedgerAnchor, error)
 	Create(*models.LedgerAnchor) error
 }
 type LedgerService struct {

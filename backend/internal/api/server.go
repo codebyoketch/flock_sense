@@ -211,7 +211,10 @@ func (s *Server) createEntry(c *gin.Context) {
 }
 func (s *Server) syncEntries(c *gin.Context) {
 	var in syncEntriesRequest
-	c.ShouldBindJSON(&in)
+	if c.ShouldBindJSON(&in) != nil {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "entries are required"}})
+		return
+	}
 	results := []gin.H{}
 	for _, x := range in.Entries {
 		var old models.Entry
@@ -219,7 +222,23 @@ func (s *Server) syncEntries(c *gin.Context) {
 			results = append(results, gin.H{"client_id": x.ClientID, "status": "duplicate", "entry_id": old.ID})
 			continue
 		}
-		results = append(results, gin.H{"client_id": x.ClientID, "status": "queued"})
+		var h models.Holding
+		if s.DB.First(&h, "id = ? AND farmer_id = ? AND deleted_at IS NULL", x.HoldingID, s.farmerID(c)).Error != nil {
+			results = append(results, gin.H{"client_id": x.ClientID, "status": "rejected", "reason": "holding_not_found"})
+			continue
+		}
+		start, startErr := time.Parse("2006-01-02", x.PeriodStart)
+		end, endErr := time.Parse("2006-01-02", x.PeriodEnd)
+		if startErr != nil || endErr != nil {
+			results = append(results, gin.H{"client_id": x.ClientID, "status": "rejected", "reason": "invalid_period"})
+			continue
+		}
+		e := models.Entry{ClientID: x.ClientID, FarmerID: s.farmerID(c), HoldingID: h.ID, PeriodStart: start, PeriodEnd: end, FeedType: x.FeedType, FeedKg: x.FeedKg, EnergySource: x.EnergySource, EnergyKwh: x.EnergyKwh, WaterLiters: x.WaterLiters, WasteHandling: x.WasteHandling, EstimatedCO2e: emissions.Calculate(emissions.Input{HoldingType: h.Type, EnergySource: x.EnergySource, WasteHandling: x.WasteHandling, FeedKg: x.FeedKg, EnergyKwh: x.EnergyKwh, WaterLiters: x.WaterLiters})}
+		if err := s.DB.Create(&e).Error; err != nil {
+			results = append(results, gin.H{"client_id": x.ClientID, "status": "rejected", "reason": "database_error"})
+			continue
+		}
+		results = append(results, gin.H{"client_id": x.ClientID, "status": "created", "entry_id": e.ID})
 	}
 	c.JSON(200, gin.H{"results": results})
 }

@@ -1,0 +1,11 @@
+# Development-only override. Use it with docker-compose.yml; do not deploy it.
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  api:
+    environment:
+      APP_ENV: development
+    ports:
+      - "8080:8080"

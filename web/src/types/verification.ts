@@ -1,16 +1,10 @@
-import type { LivestockType } from "./holding";
+import type { Entry } from "./entry";
 
 export type VerificationVerdict = "confirm" | "flag";
 
-export interface PendingVerification {
-  entry_id: string;
-  farmer_name: string;
-  holding_type: LivestockType;
-  period_end: string;
-  estimated_co2e_kg: number;
-  verifications_so_far: number;
-  verifications_required: number;
-}
+// The current Go endpoint returns the stored Entry model. It deliberately
+// omits the other farmer's identity and prior-attestation counts.
+export type PendingVerification = Entry;
 
 export interface SubmitVerificationRequest {
   entry_id: string;

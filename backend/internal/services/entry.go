@@ -1,0 +1,104 @@
+package services
+
+import (
+	"errors"
+	"github.com/flocksense/backend/internal/emissions"
+	"github.com/flocksense/backend/internal/models"
+	"time"
+)
+
+type OwnedHoldingStore interface {
+	FindOwned(id, farmerID string) (models.Holding, error)
+}
+type EntryWriter interface {
+	FindByClientID(clientID string) (models.Entry, error)
+	Create(*models.Entry) error
+	ListByHolding(holdingID string) ([]models.Entry, error)
+	FindByID(id string) (models.Entry, error)
+	ListByFarmerStatus(farmerID, status string) ([]models.Entry, error)
+}
+type EntryInput struct {
+	ClientID      string  `json:"client_id"`
+	HoldingID     string  `json:"holding_id"`
+	PeriodStart   string  `json:"period_start"`
+	PeriodEnd     string  `json:"period_end"`
+	FeedType      string  `json:"feed_type"`
+	FeedKg        float64 `json:"feed_kg"`
+	EnergySource  string  `json:"energy_source"`
+	EnergyKwh     float64 `json:"energy_kwh"`
+	WaterLiters   float64 `json:"water_liters"`
+	WasteHandling string  `json:"waste_handling"`
+}
+type EntryService struct {
+	holdings OwnedHoldingStore
+	entries  EntryWriter
+}
+
+type SyncResult struct {
+	ClientID string
+	Status   string
+	EntryID  string
+	Reason   string
+}
+
+func NewEntryService(holdings OwnedHoldingStore, entries EntryWriter) *EntryService {
+	return &EntryService{holdings: holdings, entries: entries}
+}
+func (s *EntryService) Create(farmerID string, input EntryInput) (models.Entry, bool, error) {
+	if existing, err := s.entries.FindByClientID(input.ClientID); err == nil {
+		return existing, true, nil
+	}
+	holding, err := s.holdings.FindOwned(input.HoldingID, farmerID)
+	if err != nil {
+		return models.Entry{}, false, err
+	}
+	start, err := time.Parse("2006-01-02", input.PeriodStart)
+	if err != nil {
+		return models.Entry{}, false, err
+	}
+	end, err := time.Parse("2006-01-02", input.PeriodEnd)
+	if err != nil {
+		return models.Entry{}, false, err
+	}
+	entry := models.Entry{ClientID: input.ClientID, FarmerID: farmerID, HoldingID: holding.ID, PeriodStart: start, PeriodEnd: end, FeedType: input.FeedType, FeedKg: input.FeedKg, EnergySource: input.EnergySource, EnergyKwh: input.EnergyKwh, WaterLiters: input.WaterLiters, WasteHandling: input.WasteHandling, EstimatedCO2e: emissions.Calculate(emissions.Input{HoldingType: holding.Type, EnergySource: input.EnergySource, WasteHandling: input.WasteHandling, FeedKg: input.FeedKg, EnergyKwh: input.EnergyKwh, WaterLiters: input.WaterLiters})}
+	if err := s.entries.Create(&entry); err != nil {
+		return models.Entry{}, false, err
+	}
+	return entry, false, nil
+}
+
+func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
+	results := make([]SyncResult, 0, len(inputs))
+	for _, input := range inputs {
+		entry, duplicate, err := s.Create(farmerID, input)
+		if err != nil {
+			results = append(results, SyncResult{ClientID: input.ClientID, Status: "rejected", Reason: "invalid_entry"})
+			continue
+		}
+		status := "created"
+		if duplicate {
+			status = "duplicate"
+		}
+		results = append(results, SyncResult{ClientID: input.ClientID, Status: status, EntryID: entry.ID})
+	}
+	return results
+}
+
+func (s *EntryService) ListByFarmerStatus(farmerID, status string) ([]models.Entry, error) {
+	return s.entries.ListByFarmerStatus(farmerID, status)
+}
+
+func (s *EntryService) Get(farmerID, entryID string) (models.Entry, error) {
+	entry, err := s.entries.FindByID(entryID)
+	if err != nil || entry.FarmerID != farmerID {
+		return models.Entry{}, errors.New("entry not found")
+	}
+	return entry, nil
+}
+
+func (s *EntryService) ListByHolding(farmerID, holdingID string) ([]models.Entry, error) {
+	if _, err := s.holdings.FindOwned(holdingID, farmerID); err != nil {
+		return nil, err
+	}
+	return s.entries.ListByHolding(holdingID)
+}

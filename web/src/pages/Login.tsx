@@ -5,23 +5,34 @@ import { royalFlockTheme } from '../theme';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
+import { setToken } from '../services/auth';
+import { api, ApiRequestError } from '../services/api';
+
+type AuthResponse = { farmer_id: string; token: string; expires_at: string };
 
 export default function Login() {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { colors, spacing, typography } = royalFlockTheme;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    if (!phone.trim()) { setError('Enter your phone number.'); return; }
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const body = await api.post<AuthResponse>('/auth/login', { phone: phone.trim() });
+      setToken(body.token);
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : 'Login failed. Check your phone number.');
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div
@@ -172,20 +183,17 @@ export default function Login() {
             <Input
               label="Phone Number"
               type="tel"
-              placeholder="0712345678"
+              placeholder="+254712345678"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
             />
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            {error && (
+              <p style={{ color: colors.error ?? '#B00020', fontSize: typography.sizes.small, marginBottom: spacing.md }}>
+                {error}
+              </p>
+            )}
 
             <div
               style={{

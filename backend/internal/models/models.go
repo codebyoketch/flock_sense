@@ -13,6 +13,24 @@ type Farmer struct {
 	Holdings      []Holding `json:"holdings,omitempty"`
 }
 
+type Admin struct {
+	ID            string `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"user_id"`
+	Email         string `gorm:"uniqueIndex" json:"email"`
+	PasswordHash  string `json:"-"`
+	CooperativeID string `json:"cooperative_id"`
+	Role          string `gorm:"default:cooperative_admin" json:"role"`
+}
+
+type OTPChallenge struct {
+	ID        string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"challenge_id"`
+	Phone     string    `gorm:"index" json:"phone"`
+	CodeHash  string    `json:"-"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Attempts  int       `json:"-"`
+	Used      bool      `json:"-"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type Holding struct {
 	ID        string     `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"holding_id"`
 	FarmerID  string     `gorm:"index" json:"farmer_id"`

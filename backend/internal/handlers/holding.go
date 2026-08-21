@@ -38,3 +38,26 @@ func (h *HoldingHandler) Create(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, holding)
 }
+
+func (h *HoldingHandler) Update(c *gin.Context) {
+	var input struct {
+		Count int `json:"count"`
+	}
+	if c.ShouldBindJSON(&input) != nil || input.Count <= 0 {
+		c.Status(400)
+		return
+	}
+	holding, err := h.service.Update(c.GetString("farmer_id"), c.Param("id"), input.Count)
+	if err != nil {
+		c.Status(404)
+		return
+	}
+	c.JSON(200, holding)
+}
+func (h *HoldingHandler) Delete(c *gin.Context) {
+	if err := h.service.Delete(c.GetString("farmer_id"), c.Param("id")); err != nil {
+		c.Status(404)
+		return
+	}
+	c.Status(204)
+}

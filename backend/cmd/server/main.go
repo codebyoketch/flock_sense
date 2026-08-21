@@ -17,7 +17,7 @@ func main() {
 	if err := database.Exec("CREATE EXTENSION IF NOT EXISTS pgcrypto").Error; err != nil {
 		log.Fatal(err)
 	}
-	if err := database.AutoMigrate(&models.Farmer{}, &models.Holding{}, &models.Entry{}, &models.Verification{}, &models.Score{}, &models.LedgerAnchor{}); err != nil {
+	if err := database.AutoMigrate(&models.Farmer{}, &models.Admin{}, &models.OTPChallenge{}, &models.Holding{}, &models.Entry{}, &models.Verification{}, &models.Score{}, &models.LedgerAnchor{}); err != nil {
 		log.Fatal(err)
 	}
 

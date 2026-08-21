@@ -34,3 +34,19 @@ func (r *EntryRepository) FindByID(id string) (models.Entry, error) {
 	return entry, err
 }
 func (r *EntryRepository) Save(entry *models.Entry) error { return r.db.Save(entry).Error }
+
+func (r *EntryRepository) ListPendingExcept(farmerID string) ([]models.Entry, error) {
+	var entries []models.Entry
+	err := r.db.Where("farmer_id <> ? AND status = ?", farmerID, "pending_verification").Limit(20).Find(&entries).Error
+	return entries, err
+}
+
+func (r *EntryRepository) ListByFarmerStatus(farmerID, status string) ([]models.Entry, error) {
+	var entries []models.Entry
+	query := r.db.Where("farmer_id = ?", farmerID)
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	err := query.Find(&entries).Error
+	return entries, err
+}

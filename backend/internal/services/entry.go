@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"github.com/flocksense/backend/internal/emissions"
 	"github.com/flocksense/backend/internal/models"
 	"time"
@@ -12,6 +13,9 @@ type OwnedHoldingStore interface {
 type EntryWriter interface {
 	FindByClientID(clientID string) (models.Entry, error)
 	Create(*models.Entry) error
+	ListByHolding(holdingID string) ([]models.Entry, error)
+	FindByID(id string) (models.Entry, error)
+	ListByFarmerStatus(farmerID, status string) ([]models.Entry, error)
 }
 type EntryInput struct {
 	ClientID      string  `json:"client_id"`
@@ -28,6 +32,13 @@ type EntryInput struct {
 type EntryService struct {
 	holdings OwnedHoldingStore
 	entries  EntryWriter
+}
+
+type SyncResult struct {
+	ClientID string
+	Status   string
+	EntryID  string
+	Reason   string
 }
 
 func NewEntryService(holdings OwnedHoldingStore, entries EntryWriter) *EntryService {
@@ -54,4 +65,40 @@ func (s *EntryService) Create(farmerID string, input EntryInput) (models.Entry, 
 		return models.Entry{}, false, err
 	}
 	return entry, false, nil
+}
+
+func (s *EntryService) Sync(farmerID string, inputs []EntryInput) []SyncResult {
+	results := make([]SyncResult, 0, len(inputs))
+	for _, input := range inputs {
+		entry, duplicate, err := s.Create(farmerID, input)
+		if err != nil {
+			results = append(results, SyncResult{ClientID: input.ClientID, Status: "rejected", Reason: "invalid_entry"})
+			continue
+		}
+		status := "created"
+		if duplicate {
+			status = "duplicate"
+		}
+		results = append(results, SyncResult{ClientID: input.ClientID, Status: status, EntryID: entry.ID})
+	}
+	return results
+}
+
+func (s *EntryService) ListByFarmerStatus(farmerID, status string) ([]models.Entry, error) {
+	return s.entries.ListByFarmerStatus(farmerID, status)
+}
+
+func (s *EntryService) Get(farmerID, entryID string) (models.Entry, error) {
+	entry, err := s.entries.FindByID(entryID)
+	if err != nil || entry.FarmerID != farmerID {
+		return models.Entry{}, errors.New("entry not found")
+	}
+	return entry, nil
+}
+
+func (s *EntryService) ListByHolding(farmerID, holdingID string) ([]models.Entry, error) {
+	if _, err := s.holdings.FindOwned(holdingID, farmerID); err != nil {
+		return nil, err
+	}
+	return s.entries.ListByHolding(holdingID)
 }

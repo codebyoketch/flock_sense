@@ -33,7 +33,28 @@ func (s *AuthService) Login(phone string) (models.Farmer, string, error) {
 	return farmer, s.issueToken(farmer.ID), nil
 }
 func (s *AuthService) issueToken(farmerID string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"farmer_id": farmerID, "exp": time.Now().Add(24 * time.Hour).Unix()})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"farmer_id": farmerID, "role": "farmer", "exp": time.Now().Add(24 * time.Hour).Unix()})
 	value, _ := token.SignedString(s.secret)
 	return value
+}
+
+func (s *AuthService) Refresh(value string) (string, error) {
+	token, err := jwt.Parse(value, func(t *jwt.Token) (any, error) {
+		if t.Method != jwt.SigningMethodHS256 {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return s.secret, nil
+	})
+	if err != nil || !token.Valid {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+	farmerID, ok := claims["farmer_id"].(string)
+	if !ok || farmerID == "" {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+	return s.issueToken(farmerID), nil
 }

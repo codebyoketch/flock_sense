@@ -23,3 +23,42 @@ func (h *EntryHandler) Create(c *gin.Context) {
 	}
 	c.JSON(201, entry)
 }
+
+func (h *EntryHandler) Sync(c *gin.Context) {
+	var input struct {
+		Entries []services.EntryInput `json:"entries"`
+	}
+	if c.ShouldBindJSON(&input) != nil {
+		c.JSON(400, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "entries are required"}})
+		return
+	}
+	results := h.service.Sync(c.GetString("farmer_id"), input.Entries)
+	c.JSON(200, gin.H{"results": results})
+}
+
+func (h *EntryHandler) ListByHolding(c *gin.Context) {
+	entries, err := h.service.ListByHolding(c.GetString("farmer_id"), c.Param("id"))
+	if err != nil {
+		c.Status(404)
+		return
+	}
+	c.JSON(200, gin.H{"data": entries, "page": 1, "page_size": len(entries), "total": len(entries)})
+}
+
+func (h *EntryHandler) Get(c *gin.Context) {
+	entry, err := h.service.Get(c.GetString("farmer_id"), c.Param("entry_id"))
+	if err != nil {
+		c.Status(404)
+		return
+	}
+	c.JSON(200, entry)
+}
+
+func (h *EntryHandler) List(c *gin.Context) {
+	entries, err := h.service.ListByFarmerStatus(c.GetString("farmer_id"), c.Query("status"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": gin.H{"code": "DATABASE_ERROR", "message": "could not load entries"}})
+		return
+	}
+	c.JSON(200, gin.H{"data": entries, "page": 1, "page_size": len(entries), "total": len(entries)})
+}

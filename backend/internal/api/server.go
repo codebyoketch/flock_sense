@@ -21,10 +21,11 @@ import (
 )
 
 type Server struct {
-	DB       *gorm.DB
-	Secret   []byte
-	Chain    blockchain.Client
-	Holdings *handlers.HoldingHandler
+	DB           *gorm.DB
+	Secret       []byte
+	Chain        blockchain.Client
+	Holdings     *handlers.HoldingHandler
+	Calculations *handlers.CalculationHandler
 }
 
 type holdingRequest struct {
@@ -55,7 +56,8 @@ func New(database *gorm.DB, secret string) *Server {
 	}
 	holdingRepository := repositories.NewHoldingRepository(database)
 	holdingService := services.NewHoldingService(holdingRepository)
-	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService)}
+	calculationService := services.NewCalculationService()
+	return &Server{DB: database, Secret: []byte(secret), Chain: blockchain.MockClient{Chain: "mock-vechain"}, Holdings: handlers.NewHoldingHandler(holdingService), Calculations: handlers.NewCalculationHandler(calculationService)}
 }
 func (s *Server) Run(addr string) error { return s.router().Run(addr) }
 func (s *Server) router() *gin.Engine {
@@ -79,7 +81,7 @@ func (s *Server) router() *gin.Engine {
 	a.POST("/verifications", s.verify)
 	a.GET("/verifications/reciprocity", s.reciprocity)
 	a.GET("/scores/me", s.score)
-	a.POST("/calculations", s.calculate)
+	a.POST("/calculations", s.Calculations.Calculate)
 	a.GET("/footprint/me", s.footprint)
 	a.GET("/reports/me", s.report)
 	a.GET("/scores/benchmark", s.benchmark)

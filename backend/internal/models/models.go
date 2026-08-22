@@ -58,6 +58,27 @@ type Entry struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
+// PendingVerification is the review-safe view of an entry. It includes the
+// submitting farmer's name so a peer can identify whose record they are
+// reviewing, without exposing phone or other profile details.
+type PendingVerification struct {
+	ID            string    `gorm:"column:id" json:"entry_id"`
+	FarmerName    string    `gorm:"column:farmer_name" json:"farmer_name"`
+	FarmerID      string    `gorm:"column:farmer_id" json:"farmer_id"`
+	HoldingID     string    `gorm:"column:holding_id" json:"holding_id"`
+	PeriodStart   time.Time `gorm:"column:period_start" json:"period_start"`
+	PeriodEnd     time.Time `gorm:"column:period_end" json:"period_end"`
+	FeedType      string    `gorm:"column:feed_type" json:"feed_type"`
+	FeedKg        float64   `gorm:"column:feed_kg" json:"feed_kg"`
+	EnergySource  string    `gorm:"column:energy_source" json:"energy_source"`
+	EnergyKwh     float64   `gorm:"column:energy_kwh" json:"energy_kwh"`
+	WaterLiters   float64   `gorm:"column:water_liters" json:"water_liters"`
+	WasteHandling string    `gorm:"column:waste_handling" json:"waste_handling"`
+	EstimatedCO2e float64   `gorm:"column:estimated_co2e_kg" json:"estimated_co2e_kg"`
+	Status        string    `gorm:"column:status" json:"status"`
+	CreatedAt     time.Time `gorm:"column:created_at" json:"created_at"`
+}
+
 type Verification struct {
 	ID         string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"verification_id"`
 	EntryID    string    `gorm:"uniqueIndex:entry_verifier" json:"entry_id"`

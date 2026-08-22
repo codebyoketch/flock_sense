@@ -14,7 +14,7 @@ type EntryStatusStore interface {
 	Save(*models.Entry) error
 }
 type PendingEntryStore interface {
-	ListPendingExcept(farmerID string) ([]models.Entry, error)
+	ListPendingExcept(farmerID string) ([]models.PendingVerification, error)
 }
 type ScoreRefresher interface {
 	ForFarmer(farmerID string) (ScoreResult, error)
@@ -73,6 +73,6 @@ func (s *VerificationService) Submit(entryID, verifierID, verdict, note string) 
 	return verification, nil
 }
 
-func (s *VerificationService) Pending(farmerID string) ([]models.Entry, error) {
+func (s *VerificationService) Pending(farmerID string) ([]models.PendingVerification, error) {
 	return s.pending.ListPendingExcept(farmerID)
 }

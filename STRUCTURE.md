@@ -12,6 +12,11 @@ flocksense/
 │   ├── cmd/
 │   │   └── server/
 │   │       └── main.go
+│   ├── db/
+│   │   ├── migrations/
+│   │   │   └── 000001_enable_pgcrypto.sql
+│   │   ├── seed.sql              # test data: 9 farmers, 11 holdings, 20 entries, verifications, scores
+│   │   └── seed.sh               # helper: ./seed.sh or ./seed.sh reset
 │   ├── internal/
 │   │   ├── handlers/
 │   │   │   ├── farmer.go

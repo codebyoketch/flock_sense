@@ -93,6 +93,38 @@ npm run dev
 
 The development override exposes the API and PostgreSQL only on the local machine. The standard root Compose configuration is intentionally production-oriented and keeps both services private.
 
+## Seed test data
+
+Populate the database with realistic Kenyan livestock farm data — 9 farmers across 2 cooperatives, 11 holdings, 20 entries, peer verifications, scores (A–E), and mock ledger anchors.
+
+```bash
+# From the repo root, with the dev database running:
+cd backend/db
+export POSTGRES_PASSWORD=your-dev-password
+
+# Seed data (idempotent — safe to run repeatedly)
+./seed.sh
+
+# Full reset: drop all tables, let AutoMigrate recreate, then seed
+# (restart the API after reset so AutoMigrate recreates the schema)
+./seed.sh reset
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up api
+```
+
+Test accounts (phone → login with OTP in development mode):
+
+| Phone | Farmer | Cooperative | Grade |
+| --- | --- | --- | --- |
+| +254712345001 | Jane Wanjiru | LakeHub | A |
+| +254712345002 | Peter Odhiambo | LakeHub | D |
+| +254712345003 | Grace Akinyi | LakeHub | C |
+| +254712345004 | David Kamau | Central | B |
+| +254712345005 | Mary Njeri | Central | — (pending) |
+| +254712345006 | Samuel Mutua | Central | E |
+| +254712345007 | Amina Hassan | LakeHub | — (no holdings) |
+| +254712345008 | Joseph Kipchoge | Central | — (no entries) |
+| +254712345009 | Lucy Wambui | LakeHub | — (inactive) |
+
 ## Verification
 
 Run the backend checks from `backend/`:

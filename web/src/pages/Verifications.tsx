@@ -60,7 +60,7 @@ export default function Verifications() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid rgba(156,175,136,0.2)', background: 'var(--color-background)', padding: '20px 24px' }}>
                   <div>
                     <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}>Verification request</p>
-                    <h2 style={{ marginTop: 4, fontSize: 20, fontWeight: 700, letterSpacing: '-0.035em' }}>Peer farm entry</h2>
+                    <h2 style={{ marginTop: 4, fontSize: 20, fontWeight: 700, letterSpacing: '-0.035em' }}>{v.farmer_name || 'Cooperative member'}</h2>
                     <p style={{ marginTop: 4, fontSize: 12, color: 'var(--color-text-secondary)' }}>
                       Period ending {new Date(v.period_end).toLocaleDateString('en-GB', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>

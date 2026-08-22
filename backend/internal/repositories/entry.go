@@ -35,9 +35,18 @@ func (r *EntryRepository) FindByID(id string) (models.Entry, error) {
 }
 func (r *EntryRepository) Save(entry *models.Entry) error { return r.db.Save(entry).Error }
 
-func (r *EntryRepository) ListPendingExcept(farmerID string) ([]models.Entry, error) {
-	var entries []models.Entry
-	err := r.db.Where("farmer_id <> ? AND status = ?", farmerID, "pending_verification").Limit(20).Find(&entries).Error
+func (r *EntryRepository) ListPendingExcept(farmerID string) ([]models.PendingVerification, error) {
+	var entries []models.PendingVerification
+	err := r.db.Table("entries").
+		Select("entries.*, farmers.name AS farmer_name").
+		// Farmer IDs are UUIDs while entry foreign-key values are currently
+		// stored as text. Cast the UUID for the join so pending reviews work
+		// with the existing schema as well as new installations.
+		Joins("JOIN farmers ON farmers.id::text = entries.farmer_id").
+		Where("entries.farmer_id <> ? AND entries.status = ?", farmerID, "pending_verification").
+		Order("entries.created_at DESC").
+		Limit(20).
+		Scan(&entries).Error
 	return entries, err
 }
 

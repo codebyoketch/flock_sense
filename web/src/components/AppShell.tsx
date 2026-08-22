@@ -81,7 +81,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       {/* ── SIDEBAR (desktop) ── */}
       <aside className="shell-sidebar">
         <Link to="/dashboard" className="shell-logo">
-          <span className="shell-logo-emoji">🐑</span>
+          <span className="shell-logo-emoji"></span>
           <span className="shell-logo-text">FlockSense</span>
         </Link>
 
@@ -94,7 +94,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
         <div className="shell-sync-widget">
           <div className="shell-sync-row">
-            <span>🌿</span>
+            <span></span>
             {farmer?.cooperative_name ?? 'Cooperative'}
           </div>
           <p className="shell-sync-sub">

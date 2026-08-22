@@ -80,7 +80,7 @@ export default function Login() {
         />
 
         <div style={{ maxWidth: 400, color: colors.textOnDark, zIndex: 2 }}>
-          <div style={{ fontSize: 64, marginBottom: spacing.md }}>🐔</div>
+          <div style={{ fontSize: 64, marginBottom: spacing.md }}></div>
           <h1
             style={{
               fontFamily: typography.fontFamily.heading,
@@ -98,7 +98,7 @@ export default function Login() {
               marginBottom: spacing.xl,
             }}
           >
-            Your farm's sustainability scorecard — peer-verified, bank-ready.
+            Your farm's sustainability scorecard - peer-verified, bank-ready.
           </p>
 
           <div
@@ -117,7 +117,7 @@ export default function Login() {
                 color: 'rgba(253, 246, 236, 0.9)',
               }}
             >
-              <span style={{ fontSize: 20 }}>📊</span>
+              <span style={{ fontSize: 20 }}></span>
               <span>Measure your carbon footprint</span>
             </div>
             <div
@@ -129,7 +129,7 @@ export default function Login() {
                 color: 'rgba(253, 246, 236, 0.9)',
               }}
             >
-              <span style={{ fontSize: 20 }}>✅</span>
+              <span style={{ fontSize: 20 }}></span>
               <span>Peer-verified sustainability</span>
             </div>
             <div
@@ -141,7 +141,7 @@ export default function Login() {
                 color: 'rgba(253, 246, 236, 0.9)',
               }}
             >
-              <span style={{ fontSize: 20 }}>💰</span>
+              <span style={{ fontSize: 20 }}></span>
               <span>Access green financing</span>
             </div>
           </div>

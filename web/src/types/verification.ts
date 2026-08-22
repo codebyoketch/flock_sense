@@ -3,8 +3,10 @@ import type { Entry } from "./entry";
 export type VerificationVerdict = "confirm" | "flag";
 
 // The current Go endpoint returns the stored Entry model. It deliberately
-// omits the other farmer's identity and prior-attestation counts.
-export type PendingVerification = Entry;
+// The farmer name identifies whose entry a cooperative peer is reviewing.
+export type PendingVerification = Entry & {
+  farmer_name: string;
+};
 
 export interface SubmitVerificationRequest {
   entry_id: string;
